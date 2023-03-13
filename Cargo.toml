@@ -7,6 +7,7 @@ repository = "https://github.com/galakhygame/gyg-eventsource"
 license-file = "LICENSE"
 keywords = ["eventsource", "eventsourcing", "eventstore"]
 categories = ["database"]
+rust-version = "1.68"
 
 [dependencies]
 anyhow = "1.0"
