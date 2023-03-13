@@ -23,22 +23,6 @@ services:
         source: eventstore-volume-logs
         target: /var/log/eventstore
 
-  mariadb:
-    image: mariadb:10.7
-    environment:
-      MARIADB_ROOT_PASSWORD: password
-    ports:
-      - "3306:3306"
-    volumes:
-      - type: volume
-        source: mariadb-volume-data
-        target: /var/lib/mysql
-
-  adminer:
-    image: adminer
-    ports:
-      - "8080:8080"
-
   redis:
     image: redis:7.0
     ports:
