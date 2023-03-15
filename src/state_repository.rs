@@ -1,23 +1,22 @@
 use std::fmt::Debug;
 
-use anyhow::{anyhow, Context, Result};
 use eventstore::{
     AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
     ReadStreamOptions, StreamPosition,
 };
-use redis::Client as CacheDb;
-use redis::Commands;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::cache::{CacheDb, CacheError};
 use crate::metadata::{EventWithMetadata, Metadata};
 use crate::model_key::ModelKey;
 use crate::state::State;
+use crate::EventSourceError;
 
 #[derive(Clone)]
-pub struct StateRepository {
+pub struct StateRepository<C> {
     event_db: EventDb,
-    cache_db: CacheDb,
+    cache_db: C,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
@@ -37,28 +36,43 @@ impl<S> StateWithInfo<S> {
     }
 }
 
-impl StateRepository {
-    pub fn new(event_db: EventDb, cache_db: CacheDb) -> Self {
+impl<C> StateRepository<C>
+where
+    C: CacheDb,
+{
+    pub fn new(event_db: EventDb, cache_db: C) -> Self {
         Self { event_db, cache_db }
     }
 
-    pub async fn get_model<S>(&self, key: &ModelKey) -> Result<StateWithInfo<S>>
+    fn get_from_cache<S>(
+        &self,
+        key: &ModelKey,
+    ) -> Result<StateWithInfo<S>, EventSourceError<S::Error>>
     where
         S: State + DeserializeOwned,
     {
-        let value = if S::state_cache_interval().is_some() {
-            let mut cache_connection = self
-                .cache_db
-                .get_connection()
-                .context("connect to cache db")?;
-            let data: String = cache_connection
-                .get(key.format())
-                .context("get from cache")
-                .unwrap_or_default();
-            serde_json::from_str(data.as_str()).unwrap_or_default()
-        } else {
-            StateWithInfo::default()
-        };
+        let data: Result<String, CacheError> = self.cache_db.get(key);
+
+        match data {
+            Ok(value) => Ok(serde_json::from_str(value.as_str()).unwrap_or_default()),
+            Err(err) => {
+                if err == CacheError::NotFound {
+                    return Ok(StateWithInfo::default());
+                }
+
+                Err(EventSourceError::CacheError(err))
+            }
+        }
+    }
+
+    pub async fn get_model<S>(
+        &self,
+        key: &ModelKey,
+    ) -> Result<StateWithInfo<S>, EventSourceError<S::Error>>
+    where
+        S: State + DeserializeOwned,
+    {
+        let value = self.get_from_cache(key)?;
 
         let mut state: S = value.state;
         let mut info = value.info;
@@ -74,9 +88,7 @@ impl StateRepository {
             .event_db
             .read_stream(key.format(), &options)
             .await
-            .context("connect to event db")?;
-
-        let mut nb_change = 0;
+            .map_err(|err| EventSourceError::EventStore(err))?;
 
         while let Ok(Some(json_event)) = stream.next().await {
             let original_event = json_event.get_original_event();
@@ -87,10 +99,9 @@ impl StateRepository {
             if metadata.is_event() {
                 let event = original_event
                     .as_json::<S::Event>()
-                    .context(format!("decode event : {:?}", json_event))?;
+                    .map_err(|err| EventSourceError::Serde(err))?;
 
                 state.play_event(&event);
-                nb_change += 1;
             }
 
             info.position = Some(original_event.revision)
@@ -98,31 +109,20 @@ impl StateRepository {
 
         let result = StateWithInfo { info, state };
 
-        if S::state_cache_interval().is_some() && nb_change > S::state_cache_interval().unwrap() {
-            let mut cache_connection = self
-                .cache_db
-                .get_connection()
-                .context("connect to cache db")?;
-
-            cache_connection
-                .set(key.format(), serde_json::to_string(&result)?)
-                .context("set cache value")?;
-        }
-
         Ok(result)
     }
 
-    pub async fn add_command<T>(
+    pub async fn add_command<S>(
         &self,
         key: &ModelKey,
-        command: T::Command,
+        command: S::Command,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<T>
+    ) -> Result<S, EventSourceError<S::Error>>
     where
-        T: State,
+        S: State,
     {
-        let mut model: T;
-        let events: Vec<T::Event>;
+        let mut model: S;
+        let events: Vec<S::Event>;
 
         loop {
             let (l_model, l_events, retry) = self
@@ -150,16 +150,18 @@ impl StateRepository {
         key: &ModelKey,
         command: S::Command,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<(S, Vec<S::Event>, bool)>
+    ) -> Result<(S, Vec<S::Event>, bool), EventSourceError<S::Error>>
     where
         S: State,
     {
-        let model: StateWithInfo<S> = self.get_model(key).await.context("adding command")?;
+        let model: StateWithInfo<S> = self.get_model(key).await?;
 
         let state = model.state;
         let info = model.info;
 
-        let events = state.try_command(command.clone()).context("try command")?;
+        let events = state
+            .try_command(command.clone())
+            .map_err(|err| EventSourceError::State(err))?;
 
         let options = if let Some(position) = info.position {
             AppendToStreamOptions::default().expected_revision(ExpectedRevision::Exact(position))
@@ -185,18 +187,21 @@ impl StateRepository {
         }
 
         let retry = self
-            .try_append_event_data(key, &options, events_data)
+            .try_append_event_data::<S>(key, &options, events_data)
             .await?;
 
         Ok((state, res_events, retry))
     }
 
-    pub async fn try_append_event_data(
+    pub async fn try_append_event_data<S>(
         &self,
         key: &ModelKey,
         options: &AppendToStreamOptions,
         events_with_data: Vec<EventWithMetadata>,
-    ) -> Result<bool> {
+    ) -> Result<bool, EventSourceError<S::Error>>
+    where
+        S: State,
+    {
         let events: Vec<EventData> = events_with_data
             .into_iter()
             .map(|e| e.full_event_data())
@@ -218,17 +223,11 @@ impl StateRepository {
                     retry = true;
                 }
                 _ => {
-                    return Err(anyhow!("error while appending : {:?}", err));
+                    return Err(EventSourceError::EventStore(err));
                 }
             }
         }
         Ok(retry)
     }
 
-    pub fn event_db(&self) -> &EventDb {
-        &self.event_db
-    }
-    pub fn cache_db(&self) -> &CacheDb {
-        &self.cache_db
-    }
 }

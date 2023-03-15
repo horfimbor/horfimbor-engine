@@ -1,6 +1,6 @@
+use std::error::Error;
 use std::fmt::Debug;
 
-use anyhow::Result;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 
@@ -23,14 +23,11 @@ pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
 pub trait State: Default + Serialize + DeserializeOwned + Debug + Send + Clone {
     type Event: Event;
     type Command: Command + Sync + Send;
+    type Error: Error;
 
     fn name_prefix() -> StateName;
 
     fn play_event(&mut self, event: &Self::Event);
 
-    fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>>;
-
-    fn state_cache_interval() -> Option<u64> {
-        None
-    }
+    fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
 }

@@ -1,6 +1,5 @@
-use anyhow::anyhow;
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use gyg_eventsource::state::{Command, Event, State};
 
@@ -19,6 +18,12 @@ impl Command for SimpleCommand {
             SimpleCommand::Set(_) => "Set",
         }
     }
+}
+
+#[derive(Error, Debug)]
+pub enum SimpleError {
+    #[error("the simple error is `{0}`")]
+    Info(String),
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]
@@ -44,6 +49,7 @@ pub struct SimpleState {
 impl State for SimpleState {
     type Event = SimpleEvent;
     type Command = SimpleCommand;
+    type Error = SimpleError;
 
     fn name_prefix() -> &'static str {
         "test-simple"
@@ -55,26 +61,29 @@ impl State for SimpleState {
         }
     }
 
-    fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>> {
+    fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
             SimpleCommand::Add(n) => {
                 if self.nb.checked_add(n).is_none() {
-                    Err(anyhow!("{} cannot be added to {}", n, self.nb))
+                    Err(SimpleError::Info(format!(
+                        "{} cannot be added to {}",
+                        n, self.nb
+                    )))
                 } else {
                     Ok(vec![SimpleEvent::Added(n)])
                 }
             }
             SimpleCommand::Remove(n) => {
                 if n > self.nb {
-                    Err(anyhow!("{} cannot be removed to {}", n, self.nb))
+                    Err(SimpleError::Info(format!(
+                        "{} cannot be removed to {}",
+                        n, self.nb
+                    )))
                 } else {
                     Ok(vec![SimpleEvent::Removed(n)])
                 }
             }
             SimpleCommand::Set(n) => Ok(vec![SimpleEvent::Removed(self.nb), SimpleEvent::Added(n)]),
         }
-    }
-    fn state_cache_interval() -> Option<u64> {
-        None
     }
 }

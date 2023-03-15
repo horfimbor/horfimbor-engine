@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use eventstore::Client as EventClient;
 use futures::executor::block_on;
+use gyg_eventsource::cache::NoCache;
 use tokio::time::sleep;
 use uuid::Uuid;
 
@@ -115,16 +116,15 @@ async fn concurrent_case() {
     );
 }
 
-fn get_repository() -> StateRepository {
+fn get_repository() -> StateRepository<NoCache> {
     let settings = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false"
         .to_string()
         .parse()
         .unwrap();
     let event_db = EventClient::new(settings).unwrap();
 
-    let cache_db = redis::Client::open("redis://localhost:6379/").unwrap();
 
-    let repo = StateRepository::new(event_db, cache_db);
+    let repo = StateRepository::new(event_db, NoCache{});
 
     repo
 }
