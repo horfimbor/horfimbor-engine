@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use gyg_eventsource::state::{Command, Event, State};
+use gyg_eventsource::state::{Command, Event, EventName, State};
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum SimpleCommand {
@@ -38,6 +38,10 @@ impl Event for SimpleEvent {
             SimpleEvent::Added(_) => "added",
             SimpleEvent::Removed(_) => "removed",
         }
+    }
+
+    fn event_list() -> Vec<EventName> {
+        vec!["added", "removed"]
     }
 }
 

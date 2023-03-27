@@ -1,9 +1,10 @@
 use std::thread;
 
 use serde::{Deserialize, Serialize};
-use tokio::time::Duration;use thiserror::Error;
+use thiserror::Error;
+use tokio::time::Duration;
 
-use gyg_eventsource::state::{Command, Event, State};
+use gyg_eventsource::state::{Command, Event, EventName, State};
 
 use crate::concurrent::ConcurrentEvent::TimeTaken;
 
@@ -31,12 +32,14 @@ impl Event for ConcurrentEvent {
             TimeTaken(_) => "time_taken",
         }
     }
+
+    fn event_list() -> Vec<EventName> {
+        vec!["time_taken"]
+    }
 }
 
 #[derive(Error, Debug)]
-pub enum ConcurrentError {
-}
-
+pub enum ConcurrentError {}
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]
 pub struct ConcurrentState {

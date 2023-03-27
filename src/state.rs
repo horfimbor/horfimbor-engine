@@ -15,6 +15,8 @@ pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
 pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
     fn event_name(&self) -> EventName;
 
+    fn event_list() -> Vec<EventName>;
+
     fn is_state_specific(&self) -> bool {
         true
     }

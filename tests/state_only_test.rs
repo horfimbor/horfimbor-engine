@@ -1,9 +1,9 @@
 use std::thread;
 use std::time::Duration;
 
-use eventstore::Client as EventClient;
+use eventstore::{Client as EventClient, Client};
 use futures::executor::block_on;
-use gyg_eventsource::cache::NoCache;
+use gyg_eventsource::state_db::NoCache;
 use tokio::time::sleep;
 use uuid::Uuid;
 
@@ -16,51 +16,55 @@ use crate::simple::{SimpleCommand, SimpleState};
 mod concurrent;
 mod simple;
 
+type EasyNoCache = NoCache<SimpleState>;
+
 #[tokio::test]
 async fn easy_case() {
-    let repo = get_repository();
+    let repo = StateRepository::new(get_event_db(), EasyNoCache::new());
 
     let key = ModelKey::new("simple_test".to_string(), Uuid::new_v4().to_string());
 
-    let model = repo.get_model::<SimpleState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(model.state(), &SimpleState { nb: 0 });
 
     let added = repo
-        .add_command::<SimpleState>(&key, SimpleCommand::Add(17), None)
+        .add_command(&key, SimpleCommand::Add(17), None)
         .await
         .unwrap();
 
     assert_eq!(added, (SimpleState { nb: 17 }));
 
-    let model = repo.get_model::<SimpleState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(model.state(), &SimpleState { nb: 17 });
 
-    let model = repo.get_model::<SimpleState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(model.state(), &SimpleState { nb: 17 });
 
-    repo.add_command::<SimpleState>(&key, SimpleCommand::Set(50), None)
+    repo.add_command(&key, SimpleCommand::Set(50), None)
         .await
         .unwrap();
 
-    let model = repo.get_model::<SimpleState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(model.state(), &SimpleState { nb: 50 });
 
-    let model = repo.get_model::<SimpleState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(model.state(), &SimpleState { nb: 50 });
 }
 
+type ConcurrentNoCache = NoCache<ConcurrentState>;
+
 #[tokio::test]
 async fn concurrent_case() {
-    let repo = get_repository();
+    let repo = StateRepository::new(get_event_db(), ConcurrentNoCache::new());
 
     let key = ModelKey::new("concurrent_test".to_string(), Uuid::new_v4().to_string());
 
-    let model = repo.get_model::<ConcurrentState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(model.state(), &ConcurrentState { names: Vec::new() });
 
@@ -68,7 +72,7 @@ async fn concurrent_case() {
         let repo = repo.clone();
         let key = key.clone();
         thread::spawn(move || {
-            block_on(repo.add_command::<ConcurrentState>(
+            block_on(repo.add_command(
                 &key,
                 ConcurrentCommand::TakeTime(1, "one".to_string()),
                 None,
@@ -81,7 +85,7 @@ async fn concurrent_case() {
         let repo = repo.clone();
         let key = key.clone();
         thread::spawn(move || {
-            block_on(repo.add_command::<ConcurrentState>(
+            block_on(repo.add_command(
                 &key,
                 ConcurrentCommand::TakeTime(2, "two".to_string()),
                 None,
@@ -90,13 +94,13 @@ async fn concurrent_case() {
         });
     }
 
-    let model = repo.get_model::<ConcurrentState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(model.state(), &ConcurrentState { names: vec![] });
 
     sleep(Duration::from_millis(200)).await;
 
-    let model = repo.get_model::<ConcurrentState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(
         model.state(),
@@ -106,7 +110,7 @@ async fn concurrent_case() {
     );
     sleep(Duration::from_millis(500)).await;
 
-    let model = repo.get_model::<ConcurrentState>(&key).await.unwrap();
+    let model = repo.get_model(&key).await.unwrap();
 
     assert_eq!(
         model.state(),
@@ -116,15 +120,10 @@ async fn concurrent_case() {
     );
 }
 
-fn get_repository() -> StateRepository<NoCache> {
+fn get_event_db() -> Client {
     let settings = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false"
         .to_string()
         .parse()
         .unwrap();
-    let event_db = EventClient::new(settings).unwrap();
-
-
-    let repo = StateRepository::new(event_db, NoCache{});
-
-    repo
+    EventClient::new(settings).unwrap()
 }

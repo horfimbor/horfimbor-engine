@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::marker::PhantomData;
 
 use eventstore::{
     AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
@@ -7,21 +8,35 @@ use eventstore::{
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
-use crate::cache::{CacheDb, CacheError};
 use crate::metadata::{EventWithMetadata, Metadata};
 use crate::model_key::ModelKey;
 use crate::state::State;
+use crate::state_db::StateDb;
 use crate::EventSourceError;
 
 #[derive(Clone)]
-pub struct StateRepository<C> {
+pub struct StateRepository<C, S>
+where
+    S: State,
+    C: StateDb<S>,
+{
     event_db: EventDb,
-    cache_db: C,
+    state_db: C,
+    state: PhantomData<S>,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 struct StateInformation {
     position: Option<u64>,
+}
+
+impl StateInformation {
+    fn next(&mut self) {
+        self.position = match self.position {
+            None => Some(0),
+            Some(i) => Some(i + 1),
+        }
+    }
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
@@ -30,49 +45,44 @@ pub struct StateWithInfo<S> {
     state: S,
 }
 
-impl<S> StateWithInfo<S> {
+impl<S> StateWithInfo<S>
+where
+    S: State,
+{
     pub fn state(&self) -> &S {
         &self.state
     }
+
+    pub fn play_event(&mut self, event: &S::Event) {
+        self.state.play_event(event);
+        self.info.next();
+    }
 }
 
-impl<C> StateRepository<C>
+impl<C, S> StateRepository<C, S>
 where
-    C: CacheDb,
+    S: State,
+    C: StateDb<S>,
 {
-    pub fn new(event_db: EventDb, cache_db: C) -> Self {
-        Self { event_db, cache_db }
-    }
-
-    fn get_from_cache<S>(
-        &self,
-        key: &ModelKey,
-    ) -> Result<StateWithInfo<S>, EventSourceError<S::Error>>
-    where
-        S: State + DeserializeOwned,
-    {
-        let data: Result<String, CacheError> = self.cache_db.get(key);
-
-        match data {
-            Ok(value) => Ok(serde_json::from_str(value.as_str()).unwrap_or_default()),
-            Err(err) => {
-                if err == CacheError::NotFound {
-                    return Ok(StateWithInfo::default());
-                }
-
-                Err(EventSourceError::CacheError(err))
-            }
+    pub fn new(event_db: EventDb, state_db: C) -> Self {
+        Self {
+            event_db,
+            state_db,
+            state: Default::default(),
         }
     }
 
-    pub async fn get_model<S>(
+    pub async fn get_model(
         &self,
         key: &ModelKey,
     ) -> Result<StateWithInfo<S>, EventSourceError<S::Error>>
     where
         S: State + DeserializeOwned,
     {
-        let value = self.get_from_cache(key)?;
+        let value = self
+            .state_db
+            .get(key)
+            .map_err(EventSourceError::StateDbError)?;
 
         let mut state: S = value.state;
         let mut info = value.info;
@@ -88,7 +98,7 @@ where
             .event_db
             .read_stream(key.format(), &options)
             .await
-            .map_err(|err| EventSourceError::EventStore(err))?;
+            .map_err(EventSourceError::EventStore)?;
 
         while let Ok(Some(json_event)) = stream.next().await {
             let original_event = json_event.get_original_event();
@@ -99,7 +109,7 @@ where
             if metadata.is_event() {
                 let event = original_event
                     .as_json::<S::Event>()
-                    .map_err(|err| EventSourceError::Serde(err))?;
+                    .map_err(EventSourceError::Serde)?;
 
                 state.play_event(&event);
             }
@@ -112,7 +122,7 @@ where
         Ok(result)
     }
 
-    pub async fn add_command<S>(
+    pub async fn add_command(
         &self,
         key: &ModelKey,
         command: S::Command,
@@ -145,7 +155,7 @@ where
         Ok(model)
     }
 
-    async fn try_append<S>(
+    async fn try_append(
         &self,
         key: &ModelKey,
         command: S::Command,
@@ -161,7 +171,7 @@ where
 
         let events = state
             .try_command(command.clone())
-            .map_err(|err| EventSourceError::State(err))?;
+            .map_err(EventSourceError::State)?;
 
         let options = if let Some(position) = info.position {
             AppendToStreamOptions::default().expected_revision(ExpectedRevision::Exact(position))
@@ -187,13 +197,13 @@ where
         }
 
         let retry = self
-            .try_append_event_data::<S>(key, &options, events_data)
+            .try_append_event_data(key, &options, events_data)
             .await?;
 
         Ok((state, res_events, retry))
     }
 
-    pub async fn try_append_event_data<S>(
+    async fn try_append_event_data(
         &self,
         key: &ModelKey,
         options: &AppendToStreamOptions,
@@ -229,5 +239,4 @@ where
         }
         Ok(retry)
     }
-
 }
