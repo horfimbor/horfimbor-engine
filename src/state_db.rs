@@ -8,14 +8,15 @@ pub trait StateDb<S>: Clone + Send
 where
     S: State,
 {
-    fn get_from_db(&self, key: &ModelKey) -> Result<String, StateDbError>;
+    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, StateDbError>;
     fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), StateDbError>;
 
     fn get(&self, key: &ModelKey) -> Result<StateWithInfo<S>, StateDbError> {
-        let data: Result<String, StateDbError> = self.get_from_db(key);
+        let data = self.get_from_db(key);
 
         match data {
-            Ok(value) => Ok(serde_json::from_str(value.as_str()).unwrap_or_default()),
+            Ok(None) => Ok(StateWithInfo::default()),
+            Ok(Some(value)) => Ok(serde_json::from_str(value.as_str()).unwrap_or_default()),
             Err(err) => Err(err),
         }
     }
@@ -36,11 +37,14 @@ pub enum StateDbError {
 
     #[error("unknown cache db error")]
     Unknown,
+
+    #[error("internal `{0}`")]
+    Internal(String),
 }
 
 #[derive(Clone)]
 pub struct NoCache<S> {
-    pub state: PhantomData<S>,
+    state: PhantomData<S>,
 }
 
 impl<S> NoCache<S> {
@@ -59,8 +63,8 @@ impl<S> StateDb<S> for NoCache<S>
 where
     S: State,
 {
-    fn get_from_db(&self, _key: &ModelKey) -> Result<String, StateDbError> {
-        Ok("".to_string())
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, StateDbError> {
+        Ok(None)
     }
 
     fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), StateDbError> {

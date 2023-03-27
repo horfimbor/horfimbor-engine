@@ -14,6 +14,7 @@ use crate::concurrent::{ConcurrentCommand, ConcurrentState};
 use crate::simple::{SimpleCommand, SimpleState};
 
 mod concurrent;
+mod redis_state;
 mod simple;
 
 type EasyNoCache = NoCache<SimpleState>;
