@@ -8,7 +8,7 @@ use tokio::time::sleep;
 use uuid::Uuid;
 
 use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::state_repository::StateRepository;
+use gyg_eventsource::event_repository::EventRepository;
 
 use crate::concurrent::{ConcurrentCommand, ConcurrentState};
 use crate::simple::{SimpleCommand, SimpleState};
@@ -21,7 +21,7 @@ type EasyNoCache = NoCache<SimpleState>;
 
 #[tokio::test]
 async fn easy_case() {
-    let repo = StateRepository::new(get_event_db(), EasyNoCache::new());
+    let repo = EventRepository::new(get_event_db(), EasyNoCache::new());
 
     let key = ModelKey::new("simple_test".to_string(), Uuid::new_v4().to_string());
 
@@ -61,7 +61,7 @@ type ConcurrentNoCache = NoCache<ConcurrentState>;
 
 #[tokio::test]
 async fn concurrent_case() {
-    let repo = StateRepository::new(get_event_db(), ConcurrentNoCache::new());
+    let repo = EventRepository::new(get_event_db(), ConcurrentNoCache::new());
 
     let key = ModelKey::new("concurrent_test".to_string(), Uuid::new_v4().to_string());
 

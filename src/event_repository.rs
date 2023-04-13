@@ -15,7 +15,7 @@ use crate::state_db::StateDb;
 use crate::EventSourceError;
 
 #[derive(Clone)]
-pub struct StateRepository<C, S>
+pub struct EventRepository<C, S>
 where
     S: State,
     C: StateDb<S>,
@@ -59,7 +59,7 @@ where
     }
 }
 
-impl<C, S> StateRepository<C, S>
+impl<C, S> EventRepository<C, S>
 where
     S: State,
     C: StateDb<S>,

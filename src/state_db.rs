@@ -1,6 +1,6 @@
 use crate::model_key::ModelKey;
 use crate::state::State;
-use crate::state_repository::StateWithInfo;
+use crate::event_repository::StateWithInfo;
 use std::marker::PhantomData;
 use thiserror::Error;
 
