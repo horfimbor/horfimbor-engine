@@ -240,7 +240,7 @@ where
         };
 
         let command_metadata =
-            EventWithMetadata::from_command(command, previous_metadata, S::name_prefix());
+            EventWithMetadata::from_command(command, previous_metadata, S::name_prefix()).map_err(EventSourceError::Metadata)?;
 
         let mut events_data = vec![command_metadata.clone()];
 
@@ -250,7 +250,7 @@ where
 
         for event in events {
             let event_metadata =
-                EventWithMetadata::from_event(event, &previous_metadata, S::name_prefix());
+                EventWithMetadata::from_event(event, &previous_metadata, S::name_prefix()).map_err(EventSourceError::Metadata)?;
 
             events_data.push(event_metadata.clone());
             previous_metadata = event_metadata.metadata().to_owned();
