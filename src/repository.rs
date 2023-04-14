@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 
 use eventstore::{
     AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
-    ReadStreamOptions, StreamPosition,
+    ReadStreamOptions, ResolvedEvent, StreamPosition,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -178,14 +178,12 @@ where
             let event = sub.next().await.map_err(EventSourceError::EventStore)?;
             dbg!(&event);
 
-            let or = event.get_original_event().data.clone();
+            let original_event = event.get_original_event().data.clone();
 
-            let str = std::str::from_utf8(or.as_ref()).map_err(EventSourceError::Utf8)?;
+            let event_id =
+                std::str::from_utf8(original_event.as_ref()).map_err(EventSourceError::Utf8)?;
 
-            let mut iter = str.split(|c| c == '@');
-
-            let index = iter.next().unwrap();
-            let stream_id = iter.next().unwrap();
+            let (index, stream_id) = Self::split_event_id(event_id)?;
             dbg!(&stream_id);
 
             let pos: u64 = index.parse().map_err(|_e| EventSourceError::Unknown)?;
@@ -198,11 +196,11 @@ where
                 .await
                 .map_err(EventSourceError::EventStore)?;
 
-            let json_event = stream
+            let json_event: ResolvedEvent = stream
                 .next()
                 .await
                 .map_err(EventSourceError::EventStore)?
-                .unwrap();
+                .ok_or(EventSourceError::Unknown)?;
 
             let original_event = json_event.get_original_event();
             dbg!(&original_event);
@@ -227,6 +225,19 @@ where
                 .set(&model_key, state)
                 .map_err(EventSourceError::StateDbError)?;
         }
+    }
+
+    fn split_event_id(str: &str) -> Result<(&str, &str), EventSourceError<S>> {
+        let mut iter = str.split(|c| c == '@');
+
+        if let (Some(index), Some(stream_id)) = (iter.next(), iter.next()) {
+            return Ok((index, stream_id));
+        }
+
+        Err(EventSourceError::Position(format!(
+            "{} isnt in the format index@stream_id",
+            str
+        )))
     }
 
     async fn try_append(

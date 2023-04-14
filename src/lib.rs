@@ -25,6 +25,9 @@ pub enum EventSourceError<S> {
     #[error("Event store error")]
     EventStore(EventStoreError),
 
+    #[error("Event store postion error")]
+    Position(String),
+
     #[error("Utf8 error")]
     Utf8(Utf8Error),
 
