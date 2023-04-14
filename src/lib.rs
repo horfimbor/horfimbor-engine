@@ -14,6 +14,7 @@ use serde::Serialize;
 use serde_json::Error as SerdeError;
 use std::error::Error;
 use std::fmt::Debug;
+use std::str::Utf8Error;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -23,6 +24,9 @@ pub enum EventSourceError<S> {
 
     #[error("Event store error")]
     EventStore(EventStoreError),
+
+    #[error("Utf8 error")]
+    Utf8(Utf8Error),
 
     #[error("Metadata error")]
     Metadata(MetadataError),

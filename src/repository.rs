@@ -96,7 +96,8 @@ where
             let original_event = json_event.get_original_event();
 
             let metadata: Metadata =
-                serde_json::from_slice(original_event.custom_metadata.as_ref()).unwrap();
+                serde_json::from_slice(original_event.custom_metadata.as_ref())
+                    .map_err(EventSourceError::Serde)?;
 
             if metadata.is_event() {
                 let event = original_event
@@ -147,7 +148,7 @@ where
         Ok(model)
     }
 
-    pub async fn create_subscription(&self, group_name: &str) {
+    pub async fn create_subscription(&self, group_name: &str) -> Result<(), EventSourceError<S>> {
         dbg!(format!("$et-evt.{}", S::name_prefix()));
 
         self.event_db
@@ -157,10 +158,12 @@ where
                 &Default::default(),
             )
             .await
-            .unwrap();
+            .map_err(EventSourceError::EventStore)?;
+
+        Ok(())
     }
 
-    pub async fn listen(&self, group_name: &str) {
+    pub async fn listen(&self, group_name: &str) -> Result<(), EventSourceError<S>> {
         let mut sub = self
             .event_db
             .subscribe_to_persistent_subscription(
@@ -169,15 +172,15 @@ where
                 &Default::default(),
             )
             .await
-            .unwrap();
+            .map_err(EventSourceError::EventStore)?;
 
         loop {
-            let event = sub.next().await.unwrap();
+            let event = sub.next().await.map_err(EventSourceError::EventStore)?;
             dbg!(&event);
 
             let or = event.get_original_event().data.clone();
 
-            let str = std::str::from_utf8(or.as_ref()).unwrap();
+            let str = std::str::from_utf8(or.as_ref()).map_err(EventSourceError::Utf8)?;
 
             let mut iter = str.split(|c| c == '@');
 
@@ -185,7 +188,7 @@ where
             let stream_id = iter.next().unwrap();
             dbg!(&stream_id);
 
-            let pos: u64 = index.parse().unwrap();
+            let pos: u64 = index.parse().map_err(|_e| EventSourceError::Unknown)?;
 
             let options = ReadStreamOptions::default().position(StreamPosition::Position(pos));
 
@@ -193,25 +196,36 @@ where
                 .event_db
                 .read_stream(stream_id, &options)
                 .await
-                .unwrap();
+                .map_err(EventSourceError::EventStore)?;
 
-            let json_event = stream.next().await.unwrap().unwrap();
+            let json_event = stream
+                .next()
+                .await
+                .map_err(EventSourceError::EventStore)?
+                .unwrap();
 
             let original_event = json_event.get_original_event();
             dbg!(&original_event);
 
             let model_key: ModelKey = stream_id.into();
 
-            let event = original_event.as_json::<S::Event>().unwrap();
+            let event = original_event
+                .as_json::<S::Event>()
+                .map_err(EventSourceError::Serde)?;
 
-            let mut state = self.state_db.get(&model_key).unwrap();
+            let mut state = self
+                .state_db
+                .get(&model_key)
+                .map_err(EventSourceError::StateDbError)?;
             dbg!(&event);
 
             state.play_event(&event, Some(original_event.revision));
 
             dbg!(&state);
 
-            self.state_db.set(&model_key, state).unwrap();
+            self.state_db
+                .set(&model_key, state)
+                .map_err(EventSourceError::StateDbError)?;
         }
     }
 
@@ -240,7 +254,8 @@ where
         };
 
         let command_metadata =
-            EventWithMetadata::from_command(command, previous_metadata, S::name_prefix()).map_err(EventSourceError::Metadata)?;
+            EventWithMetadata::from_command(command, previous_metadata, S::name_prefix())
+                .map_err(EventSourceError::Metadata)?;
 
         let mut events_data = vec![command_metadata.clone()];
 
@@ -250,7 +265,8 @@ where
 
         for event in events {
             let event_metadata =
-                EventWithMetadata::from_event(event, &previous_metadata, S::name_prefix()).map_err(EventSourceError::Metadata)?;
+                EventWithMetadata::from_event(event, &previous_metadata, S::name_prefix())
+                    .map_err(EventSourceError::Metadata)?;
 
             events_data.push(event_metadata.clone());
             previous_metadata = event_metadata.metadata().to_owned();
@@ -275,10 +291,12 @@ where
         let mut err = Ok(());
         let events: Vec<EventData> = events_with_data
             .into_iter()
-            .map(|e| {
-                e.full_event_data()
-                    .map_err(|e| err = Err(EventSourceError::Metadata(e)))
-                    .unwrap()
+            .filter_map(|e| match e.full_event_data() {
+                Ok(event) => Some(event),
+                Err(e) => {
+                    err = Err(EventSourceError::Metadata(e));
+                    None
+                }
             })
             .collect();
         err?;
@@ -288,21 +306,13 @@ where
             .append_to_stream(key.format(), options, events)
             .await;
 
-        let mut retry = false;
-
-        if appended.is_err() {
-            let err = appended.unwrap_err();
-            match err {
-                Error::WrongExpectedVersion { expected, current } => {
-                    println!("{current} instead of {expected}");
-
-                    retry = true;
-                }
-                _ => {
-                    return Err(EventSourceError::EventStore(err));
-                }
+        match appended {
+            Ok(_) => Ok(false),
+            Err(Error::WrongExpectedVersion { expected, current }) => {
+                println!("{current} instead of {expected}");
+                Ok(true)
             }
+            Err(e) => Err(EventSourceError::EventStore(e)),
         }
-        Ok(retry)
     }
 }

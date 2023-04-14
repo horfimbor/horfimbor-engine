@@ -74,13 +74,17 @@ impl EventWithMetadata {
     where
         C: Command,
     {
-        let event_data =
-            EventData::json(format!("{}.{}", COMMAND_PREFIX, state_name), command).map_err(MetadataError::SerdeError)?;
+        let event_data = EventData::json(format!("{}.{}", COMMAND_PREFIX, state_name), command)
+            .map_err(MetadataError::SerdeError)?;
 
         Ok(Self::from_event_data(event_data, previous_metadata, false))
     }
 
-    pub fn from_event<E>(event: E, previous_metadata: &Metadata, state_name: StateName) -> Result<Self, MetadataError>
+    pub fn from_event<E>(
+        event: E,
+        previous_metadata: &Metadata,
+        state_name: StateName,
+    ) -> Result<Self, MetadataError>
     where
         E: Event,
     {
@@ -98,7 +102,11 @@ impl EventWithMetadata {
 
         let event_data = EventData::json(key, event).map_err(MetadataError::SerdeError)?;
 
-        Ok(Self::from_event_data(event_data, Some(previous_metadata), true))
+        Ok(Self::from_event_data(
+            event_data,
+            Some(previous_metadata),
+            true,
+        ))
     }
 
     fn from_event_data(
