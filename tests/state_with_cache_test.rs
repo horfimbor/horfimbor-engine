@@ -8,8 +8,7 @@ use uuid::Uuid;
 
 use gyg_eventsource::model_key::ModelKey;
 
-use gyg_eventsource::event_repository::EventRepository;
-use gyg_eventsource::state_repository::StateRepository;
+use gyg_eventsource::repository::EventRepository;
 
 use crate::state_db::{PokeCommand, PokeState, RedisStateDb};
 
@@ -32,7 +31,7 @@ async fn easy_case() {
         let event_store = get_event_db();
         let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
         let state_repo =
-            StateRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
+            EventRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
 
         state_repo.create_subscription(name2.as_str()).await;
 

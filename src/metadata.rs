@@ -2,8 +2,7 @@ use eventstore::EventData;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::state::{Command, Event, EventType, StateName};
-use crate::{COMMAND_PREFIX, EVENT_PREFIX};
+use crate::{Command, Event, EventType, StateName, COMMAND_PREFIX, EVENT_PREFIX};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Metadata {

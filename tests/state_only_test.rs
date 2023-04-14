@@ -7,8 +7,8 @@ use futures::executor::block_on;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use gyg_eventsource::event_repository::EventRepository;
 use gyg_eventsource::model_key::ModelKey;
+use gyg_eventsource::repository::EventRepository;
 
 use crate::concurrent::{ConcurrentCommand, ConcurrentState};
 use crate::simple::{SimpleCommand, SimpleState};

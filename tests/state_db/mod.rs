@@ -1,6 +1,6 @@
 use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::state::{Command, Event, EventName, State};
 use gyg_eventsource::state_db::{StateDb, StateDbError};
+use gyg_eventsource::{Command, Event, EventName, State};
 use redis::{Client, Commands};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;

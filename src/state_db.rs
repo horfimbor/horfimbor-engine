@@ -1,6 +1,6 @@
-use crate::event_repository::StateWithInfo;
 use crate::model_key::ModelKey;
-use crate::state::State;
+use crate::repository::StateWithInfo;
+use crate::State;
 use thiserror::Error;
 
 pub trait StateDb<S>: Clone + Send

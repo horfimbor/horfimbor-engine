@@ -1,10 +1,9 @@
 use std::thread;
 
+use gyg_eventsource::{Command, Event, EventName, State};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::Duration;
-
-use gyg_eventsource::state::{Command, Event, EventName, State};
 
 use crate::concurrent::ConcurrentEvent::TimeTaken;
 
