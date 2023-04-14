@@ -1,3 +1,4 @@
+pub mod event_repository;
 pub mod metadata;
 pub mod model_key;
 pub mod state;

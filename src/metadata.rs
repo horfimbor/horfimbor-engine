@@ -2,7 +2,7 @@ use eventstore::EventData;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::state::{Command, Event, StateName};
+use crate::state::{Command, Event, EventType, StateName};
 use crate::{COMMAND_PREFIX, EVENT_PREFIX};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -73,16 +73,8 @@ impl EventWithMetadata {
     where
         C: Command,
     {
-        let event_data = EventData::json(
-            format!(
-                "{}.{}.{}",
-                COMMAND_PREFIX,
-                state_name,
-                command.command_name()
-            ),
-            command,
-        )
-        .unwrap();
+        let event_data =
+            EventData::json(format!("{}.{}", COMMAND_PREFIX, state_name), command).unwrap();
 
         Self::from_event_data(event_data, previous_metadata, false)
     }
@@ -92,11 +84,14 @@ impl EventWithMetadata {
         E: Event,
     {
         println!("{:?}", event);
-        println!("{:?}", event.is_state_specific());
-        let key = if event.is_state_specific() {
-            format!("{}.{}.{}", EVENT_PREFIX, state_name, event.event_name())
-        } else {
-            format!("{}.{}", EVENT_PREFIX, event.event_name())
+
+        let key = match event.get_type() {
+            EventType::State => {
+                format!("{}.{}", EVENT_PREFIX, state_name)
+            }
+            EventType::Event => {
+                format!("{}.{}", EVENT_PREFIX, event.event_name())
+            }
         };
         println!("{key:?}");
 
