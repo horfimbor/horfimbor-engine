@@ -1,40 +1,54 @@
 use eventstore::{Client as EventClient, Client};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use redis::Commands;
+use std::time::Duration;
+use tokio::time::sleep;
 use uuid::Uuid;
-use gyg_eventsource::EventSourceError;
-use gyg_eventsource::metadata::Metadata;
 
 use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::state::State;
+
+use gyg_eventsource::event_repository::EventRepository;
 use gyg_eventsource::state_repository::StateRepository;
 
-use crate::redis_state::{PokeCommand, PokeState, RedisStateDb};
+use crate::state_db::{PokeCommand, PokeState, RedisStateDb};
 
 mod concurrent;
-mod redis_state;
 mod simple;
+mod state_db;
 
 type EasyRedisCache = RedisStateDb<PokeState>;
 
-
-
 #[tokio::test]
 async fn easy_case() {
+    let name: String = rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(7)
+        .map(char::from)
+        .collect();
+
+    let name2 = name.clone();
+    tokio::spawn(async move {
+        let event_store = get_event_db();
+        let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
+        let state_repo =
+            StateRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
+
+        state_repo.create_subscription(name2.as_str()).await;
+
+        state_repo.listen(name2.as_str()).await;
+    });
+
     let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
 
     let event_store = get_event_db();
 
+    let repo = EventRepository::new(
+        event_store.clone(),
+        EasyRedisCache::new(redis_client.clone()),
+    );
 
-    match event_store.create_persistent_subscription("$ce-poke_test", "groupeP", &Default::default()).await {
-        Ok(_) => {}
-        Err(eventstore::Error::ResourceAlreadyExists) => {}
-        Err(_) => { todo!("check error") }
-    }
-
-
-    let repo = StateRepository::new(event_store.clone(), EasyRedisCache::new(redis_client.clone()));
-
-    let key = ModelKey::new("poke_test".to_string(), Uuid::new_v4().to_string());
+    let key = ModelKey::new(name, Uuid::new_v4().to_string());
 
     let model = repo.get_model(&key).await.unwrap();
 
@@ -45,42 +59,26 @@ async fn easy_case() {
 
     assert_eq!(data, None);
 
+    repo.add_command(&key, PokeCommand::Poke(80), None)
+        .await
+        .unwrap();
     let added = repo
-        .add_command(&key, PokeCommand::Poke(80), None)
+        .add_command(&key, PokeCommand::Poke(102), None)
         .await
         .unwrap();
 
-    assert_eq!(added, (PokeState { nb: 80 }));
+    assert_eq!(added, (PokeState { nb: 182 }));
 
-    let mut sub = event_store.subscribe_to_persistent_subscription("$ce-poke_test", "groupeP", &Default::default()).await.unwrap();
+    sleep(Duration::from_millis(1000)).await;
 
-    let event = sub.next().await.unwrap();
-    dbg!(&event);
-    let original_event = event.get_original_event();
-    dbg!(&original_event);
+    let data_es = repo.get_model(&key).await.unwrap();
+    dbg!(data_es);
 
-    let metadata: Metadata =
-        serde_json::from_slice(original_event.custom_metadata.as_ref()).unwrap();
-
-    if metadata.is_event() {
-        let event = original_event
-            .as_json::<<PokeState as State>::Event>().unwrap();
-
-        dbg!(&event);
-    }else{
-        let command = original_event
-            .as_json::<<PokeState as State>::Command>().unwrap();
-
-        dbg!(&command);
-    }
-
-
-    sub.ack(event).await.unwrap();
-
-
-
-    let data: Option<String> = connection.get(key.format()).unwrap();
-    assert_eq!(data, Some("Bob".to_string()));
+    let data_redis: Option<String> = connection.get(key.format()).unwrap();
+    assert_eq!(
+        data_redis,
+        Some(r#"{"info":{"position":3},"state":{"nb":182}}"#.to_string())
+    );
 }
 
 fn get_event_db() -> Client {

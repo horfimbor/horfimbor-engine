@@ -30,15 +30,6 @@ struct StateInformation {
     position: Option<u64>,
 }
 
-impl StateInformation {
-    fn next(&mut self) {
-        self.position = match self.position {
-            None => Some(0),
-            Some(i) => Some(i + 1),
-        }
-    }
-}
-
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct StateWithInfo<S> {
     info: StateInformation,
@@ -53,9 +44,10 @@ where
         &self.state
     }
 
-    pub fn play_event(&mut self, event: &S::Event) {
+    pub fn play_event(&mut self, event: &S::Event, position: Option<u64>) {
         self.state.play_event(event);
-        self.info.next();
+
+        self.info.position = position
     }
 }
 

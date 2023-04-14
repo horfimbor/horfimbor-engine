@@ -2,8 +2,8 @@ use gyg_eventsource::model_key::ModelKey;
 use gyg_eventsource::state::{Command, Event, EventName, State};
 use gyg_eventsource::state_db::{StateDb, StateDbError};
 use redis::{Client, Commands};
-use std::marker::PhantomData;
 use serde::{Deserialize, Serialize};
+use std::marker::PhantomData;
 use thiserror::Error;
 
 #[derive(Clone)]
@@ -43,8 +43,6 @@ where
         Ok(())
     }
 }
-
-
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum PokeCommand {
@@ -114,5 +112,35 @@ impl State for PokeState {
                 }
             }
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct NoCache<S> {
+    state: PhantomData<S>,
+}
+
+impl<S> NoCache<S> {
+    pub fn new() -> Self {
+        Self { state: PhantomData }
+    }
+}
+
+impl<S> Default for NoCache<S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<S> StateDb<S> for NoCache<S>
+where
+    S: State,
+{
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, StateDbError> {
+        Ok(None)
+    }
+
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), StateDbError> {
+        Ok(())
     }
 }

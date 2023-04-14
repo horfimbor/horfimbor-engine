@@ -19,8 +19,8 @@ impl ModelKey {
     }
 }
 
-impl From<String> for ModelKey {
-    fn from(value: String) -> Self {
+impl From<&str> for ModelKey {
+    fn from(value: &str) -> Self {
         let mut split = value.split('.');
         let stream_name = split.next().unwrap_or_default();
         let stream_id = split.collect();

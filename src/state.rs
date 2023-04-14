@@ -8,6 +8,11 @@ pub type CommandName = &'static str;
 pub type EventName = &'static str;
 pub type StateName = &'static str;
 
+pub enum EventType {
+    State,
+    Event,
+}
+
 pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
     fn command_name(&self) -> CommandName;
 }
@@ -17,8 +22,8 @@ pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
 
     fn event_list() -> Vec<EventName>;
 
-    fn is_state_specific(&self) -> bool {
-        true
+    fn get_type(&self) -> EventType {
+        EventType::State
     }
 }
 
