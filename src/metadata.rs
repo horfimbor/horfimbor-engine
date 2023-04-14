@@ -1,5 +1,7 @@
 use eventstore::EventData;
 use serde::{Deserialize, Serialize};
+use serde_json::Error as SerdeError;
+use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{Command, Event, EventType, StateName, COMMAND_PREFIX, EVENT_PREFIX};
@@ -57,11 +59,11 @@ impl EventWithMetadata {
         &self.metadata
     }
 
-    pub fn full_event_data(&self) -> EventData {
+    pub fn full_event_data(&self) -> Result<EventData, MetadataError> {
         self.event_data
             .clone()
             .metadata_as_json(self.metadata())
-            .unwrap()
+            .map_err(MetadataError::SerdeError)
     }
 
     pub fn from_command<C>(
@@ -131,4 +133,13 @@ impl EventWithMetadata {
             metadata,
         }
     }
+}
+
+#[derive(Error, Debug)]
+pub enum MetadataError {
+    #[error("Not found")]
+    NotFound,
+
+    #[error("internal `{0}`")]
+    SerdeError(SerdeError),
 }

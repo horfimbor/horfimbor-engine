@@ -272,10 +272,16 @@ where
     where
         S: State,
     {
+        let mut err = Ok(());
         let events: Vec<EventData> = events_with_data
             .into_iter()
-            .map(|e| e.full_event_data())
+            .map(|e| {
+                e.full_event_data()
+                    .map_err(|e| err = Err(EventSourceError::Metadata(e)))
+                    .unwrap()
+            })
             .collect();
+        err?;
 
         let appended = self
             .event_db

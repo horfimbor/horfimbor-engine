@@ -6,6 +6,7 @@ pub mod state_db;
 const COMMAND_PREFIX: &str = "cmd";
 const EVENT_PREFIX: &str = "evt";
 
+use crate::metadata::MetadataError;
 use crate::state_db::StateDbError;
 use eventstore::Error as EventStoreError;
 use serde::de::DeserializeOwned;
@@ -22,6 +23,9 @@ pub enum EventSourceError<S> {
 
     #[error("Event store error")]
     EventStore(EventStoreError),
+
+    #[error("Metadata error")]
+    Metadata(MetadataError),
 
     #[error("Serde error")]
     Serde(SerdeError),
