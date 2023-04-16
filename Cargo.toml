@@ -9,13 +9,15 @@ keywords = ["eventsource", "eventsourcing", "eventstore"]
 categories = ["database"]
 
 [dependencies]
-anyhow = "1.0"
 async-trait = "0.1"
 eventstore = "2.2"
 futures = "0.3"
-redis= { version = "0.22", features = ["tokio-native-tls-comp"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = "1.26"
+thiserror = "1.0"
 
+[dev-dependencies]
+rand = "0.8.5"
+redis= { version = "0.22", features = ["tokio-native-tls-comp"] }

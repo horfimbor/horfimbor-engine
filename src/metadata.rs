@@ -1,9 +1,10 @@
 use eventstore::EventData;
 use serde::{Deserialize, Serialize};
+use serde_json::Error as SerdeError;
+use thiserror::Error;
 use uuid::Uuid;
 
-use crate::state::{Command, Event, StateName};
-use crate::{COMMAND_PREFIX, EVENT_PREFIX};
+use crate::{Command, Event, EventType, StateName, COMMAND_PREFIX, EVENT_PREFIX};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Metadata {
@@ -58,51 +59,54 @@ impl EventWithMetadata {
         &self.metadata
     }
 
-    pub fn full_event_data(&self) -> EventData {
+    pub fn full_event_data(&self) -> Result<EventData, MetadataError> {
         self.event_data
             .clone()
             .metadata_as_json(self.metadata())
-            .unwrap()
+            .map_err(MetadataError::SerdeError)
     }
 
     pub fn from_command<C>(
         command: C,
         previous_metadata: Option<&Metadata>,
         state_name: StateName,
-    ) -> Self
+    ) -> Result<Self, MetadataError>
     where
         C: Command,
     {
-        let event_data = EventData::json(
-            format!(
-                "{}.{}.{}",
-                COMMAND_PREFIX,
-                state_name,
-                command.command_name()
-            ),
-            command,
-        )
-        .unwrap();
+        let event_data = EventData::json(format!("{}.{}", COMMAND_PREFIX, state_name), command)
+            .map_err(MetadataError::SerdeError)?;
 
-        Self::from_event_data(event_data, previous_metadata, false)
+        Ok(Self::from_event_data(event_data, previous_metadata, false))
     }
 
-    pub fn from_event<E>(event: E, previous_metadata: &Metadata, state_name: StateName) -> Self
+    pub fn from_event<E>(
+        event: E,
+        previous_metadata: &Metadata,
+        state_name: StateName,
+    ) -> Result<Self, MetadataError>
     where
         E: Event,
     {
         println!("{:?}", event);
-        println!("{:?}", event.is_state_specific());
-        let key = if event.is_state_specific() {
-            format!("{}.{}.{}", EVENT_PREFIX, state_name, event.event_name())
-        } else {
-            format!("{}.{}", EVENT_PREFIX, event.event_name())
+
+        let key = match event.get_type() {
+            EventType::State => {
+                format!("{}.{}", EVENT_PREFIX, state_name)
+            }
+            EventType::Event => {
+                format!("{}.{}", EVENT_PREFIX, event.event_name())
+            }
         };
         println!("{key:?}");
 
-        let event_data = EventData::json(key, event).unwrap();
+        let event_data = EventData::json(key, event).map_err(MetadataError::SerdeError)?;
 
-        Self::from_event_data(event_data, Some(previous_metadata), true)
+        Ok(Self::from_event_data(
+            event_data,
+            Some(previous_metadata),
+            true,
+        ))
     }
 
     fn from_event_data(
@@ -137,4 +141,13 @@ impl EventWithMetadata {
             metadata,
         }
     }
+}
+
+#[derive(Error, Debug)]
+pub enum MetadataError {
+    #[error("Not found")]
+    NotFound,
+
+    #[error("internal `{0}`")]
+    SerdeError(SerdeError),
 }

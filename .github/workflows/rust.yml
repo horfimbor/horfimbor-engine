@@ -30,5 +30,7 @@ jobs:
           - "6379:6379"
     steps:
       - uses: actions/checkout@v3
-      - name: Run tests account-state
+      - name: Run tests
         run: cargo test --verbose
+      - name: Run clippy
+        run: cargo clippy -- -D clippy::expect_used -D clippy::panic  -D clippy::unwrap_used
