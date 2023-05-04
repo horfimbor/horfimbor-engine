@@ -148,12 +148,14 @@ where
         Ok(model)
     }
 
-    pub async fn create_subscription(&self, group_name: &str) -> Result<(), EventSourceError<S>> {
-        dbg!(format!("$et-evt.{}", S::name_prefix()));
-
+    pub async fn create_subscription(
+        &self,
+        stream_name: &str,
+        group_name: &str,
+    ) -> Result<(), EventSourceError<S>> {
         self.event_db
             .create_persistent_subscription(
-                format!("$et-evt.{}", S::name_prefix()),
+                format!("$ce-{}", stream_name),
                 group_name,
                 &Default::default(),
             )
@@ -163,11 +165,17 @@ where
         Ok(())
     }
 
-    pub async fn listen(&self, group_name: &str) -> Result<(), EventSourceError<S>> {
+    pub async fn listen(
+        &self,
+        stream_name: &str,
+        group_name: &str,
+    ) -> Result<(), EventSourceError<S>> {
+        dbg!(format!("$ce-{}", stream_name));
+
         let mut sub = self
             .event_db
             .subscribe_to_persistent_subscription(
-                format!("$et-evt.{}", S::name_prefix()),
+                format!("$ce-{}", stream_name),
                 group_name,
                 &Default::default(),
             )
@@ -205,21 +213,55 @@ where
             let original_event = json_event.get_original_event();
             dbg!(&original_event);
 
-            let model_key: ModelKey = stream_id.into();
+            let metadata: Metadata =
+                serde_json::from_slice(original_event.custom_metadata.as_ref())
+                    .map_err(EventSourceError::Serde)?;
 
-            let event = original_event
-                .as_json::<S::Event>()
-                .map_err(EventSourceError::Serde)?;
+            let model_key: ModelKey = stream_id.into();
 
             let mut state = self
                 .state_db
                 .get(&model_key)
                 .map_err(EventSourceError::StateDbError)?;
-            dbg!(&event);
 
-            state.play_event(&event, Some(original_event.revision));
+            if original_event.revision == 0 {
+                if state.info.position.is_some() {
+                    return Err(EventSourceError::Position(format!(
+                        "cache should be empty but is : {:?}",
+                        state.info.position
+                    )));
+                }
+            } else {
+                // if state.info.position != Some(original_event.revision - 1) {
+                match state.info.position {
+                    None => {
+                        todo!("load all");
+                    }
+                    Some(pos) => {
+                        if pos >= original_event.revision {
+                            return Err(EventSourceError::Position(format!(
+                                "cache should be lower than {} but is : {:?}",
+                                original_event.revision, state.info.position
+                            )));
+                        } else if pos < original_event.revision - 1 {
+                            todo!("load missing");
+                        }
+                    }
+                }
+            }
 
-            dbg!(&state);
+            if metadata.is_event() {
+                let event = original_event
+                    .as_json::<S::Event>()
+                    .map_err(EventSourceError::Serde)?;
+
+                dbg!(&event);
+
+                state.play_event(&event, Some(original_event.revision));
+                dbg!(&state);
+            } else {
+                state.info.position = Some(original_event.revision);
+            }
 
             self.state_db
                 .set(&model_key, state)

@@ -19,7 +19,7 @@ mod state_db;
 type EasyRedisCache = RedisStateDb<PokeState>;
 
 #[tokio::test]
-async fn easy_case() {
+async fn with_cache() {
     let name: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(7)
@@ -33,9 +33,15 @@ async fn easy_case() {
         let state_repo =
             EventRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
 
-        state_repo.create_subscription(name2.as_str()).await.unwrap();
+        state_repo
+            .create_subscription(name2.as_str(), name2.as_str())
+            .await
+            .unwrap();
 
-        state_repo.listen(name2.as_str()).await.unwrap();
+        state_repo
+            .listen(name2.as_str(), name2.as_str())
+            .await
+            .unwrap();
     });
 
     let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
