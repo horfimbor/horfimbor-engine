@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -76,6 +77,14 @@ where
             .get(key)
             .map_err(EventSourceError::StateDbError)?;
 
+        self.complete_from_es(key, value).await
+    }
+
+    async fn complete_from_es(
+        &self,
+        key: &ModelKey,
+        value: StateWithInfo<S>,
+    ) -> Result<StateWithInfo<S>, EventSourceError<<S as State>::Error>> {
         let mut state: S = value.state;
         let mut info = value.info;
 
@@ -152,7 +161,7 @@ where
         &self,
         stream_name: &str,
         group_name: &str,
-    ) -> Result<(), EventSourceError<S>> {
+    ) -> Result<(), EventSourceError<S::Error>> {
         self.event_db
             .create_persistent_subscription(
                 format!("$ce-{}", stream_name),
@@ -169,7 +178,7 @@ where
         &self,
         stream_name: &str,
         group_name: &str,
-    ) -> Result<(), EventSourceError<S>> {
+    ) -> Result<(), EventSourceError<<S as State>::Error>> {
         dbg!(format!("$ce-{}", stream_name));
 
         let mut sub = self
@@ -226,50 +235,61 @@ where
 
             if original_event.revision == 0 {
                 if state.info.position.is_some() {
-                    return Err(EventSourceError::Position(format!(
+                    dbg!(format!(
                         "cache should be empty but is : {:?}",
                         state.info.position
-                    )));
+                    ));
                 }
+                continue;
             } else {
-                // if state.info.position != Some(original_event.revision - 1) {
                 match state.info.position {
                     None => {
-                        todo!("load all");
+                        state = self.complete_from_es(&model_key, state).await?;
+
+                        self.state_db
+                            .set(&model_key, state)
+                            .map_err(EventSourceError::StateDbError)?;
+                        continue;
                     }
-                    Some(pos) => {
-                        if pos >= original_event.revision {
-                            return Err(EventSourceError::Position(format!(
+                    Some(pos) => match pos.cmp(&(original_event.revision - 1)) {
+                        Ordering::Less => {
+                            state = self.complete_from_es(&model_key, state).await?;
+
+                            self.state_db
+                                .set(&model_key, state)
+                                .map_err(EventSourceError::StateDbError)?;
+                        }
+                        Ordering::Equal => {
+                            if metadata.is_event() {
+                                let event = original_event
+                                    .as_json::<S::Event>()
+                                    .map_err(EventSourceError::Serde)?;
+
+                                dbg!(&event);
+
+                                state.play_event(&event, Some(original_event.revision));
+                                dbg!(&state);
+                            } else {
+                                state.info.position = Some(original_event.revision);
+                            }
+
+                            self.state_db
+                                .set(&model_key, state)
+                                .map_err(EventSourceError::StateDbError)?;
+                        }
+                        Ordering::Greater => {
+                            dbg!(format!(
                                 "cache should be lower than {} but is : {:?}",
                                 original_event.revision, state.info.position
-                            )));
-                        } else if pos < original_event.revision - 1 {
-                            todo!("load missing");
+                            ));
                         }
-                    }
+                    },
                 }
             }
-
-            if metadata.is_event() {
-                let event = original_event
-                    .as_json::<S::Event>()
-                    .map_err(EventSourceError::Serde)?;
-
-                dbg!(&event);
-
-                state.play_event(&event, Some(original_event.revision));
-                dbg!(&state);
-            } else {
-                state.info.position = Some(original_event.revision);
-            }
-
-            self.state_db
-                .set(&model_key, state)
-                .map_err(EventSourceError::StateDbError)?;
         }
     }
 
-    fn split_event_id(str: &str) -> Result<(&str, &str), EventSourceError<S>> {
+    fn split_event_id(str: &str) -> Result<(&str, &str), EventSourceError<S::Error>> {
         let mut iter = str.split(|c| c == '@');
 
         if let (Some(index), Some(stream_id)) = (iter.next(), iter.next()) {
