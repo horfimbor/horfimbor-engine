@@ -2,7 +2,7 @@ version: "3.4"
 
 services:
   evenstore:
-    image: eventstore/eventstore:21.10.6-bionic
+    image: eventstore/eventstore:21.10.9-bionic
     environment:
       - EVENTSTORE_CLUSTER_SIZE=1
       - EVENTSTORE_RUN_PROJECTIONS=All
