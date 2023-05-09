@@ -88,8 +88,6 @@ impl EventWithMetadata {
     where
         E: Event,
     {
-        println!("{:?}", event);
-
         let key = match event.get_type() {
             EventType::State => {
                 format!("{}.{}", EVENT_PREFIX, state_name)
@@ -98,7 +96,6 @@ impl EventWithMetadata {
                 format!("{}.{}", EVENT_PREFIX, event.event_name())
             }
         };
-        println!("{key:?}");
 
         let event_data = EventData::json(key, event).map_err(MetadataError::SerdeError)?;
 

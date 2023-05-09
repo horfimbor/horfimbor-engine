@@ -9,6 +9,7 @@ use uuid::Uuid;
 use gyg_eventsource::model_key::ModelKey;
 
 use gyg_eventsource::repository::EventRepository;
+use gyg_eventsource::state_db_redis::RedisStateDb;
 
 use crate::state_db::{PokeCommand, PokeState, RedisStateDb};
 

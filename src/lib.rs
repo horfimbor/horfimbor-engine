@@ -2,6 +2,7 @@ pub mod metadata;
 pub mod model_key;
 pub mod repository;
 pub mod state_db;
+pub mod state_db_redis;
 
 const COMMAND_PREFIX: &str = "cmd";
 const EVENT_PREFIX: &str = "evt";

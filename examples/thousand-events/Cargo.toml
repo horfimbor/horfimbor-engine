@@ -1,0 +1,21 @@
+[package]
+name = "thousand-events"
+version = "0.0.1"
+edition = "2021"
+publish = false
+
+[dependencies]
+gyg-eventsource= {path = "../.."}
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8.5"
+tokio = {version = "1.26", features = ["full"]}
+thiserror = "1.0"
+eventstore = "2.2"
+redis= { version = "0.22", features = ["tokio-native-tls-comp"] }
+uuid = { version = "1.1", features = ["v4", "serde"] }
+
+[[bin]]
+name = "cache"
+test = false
+bench = false
