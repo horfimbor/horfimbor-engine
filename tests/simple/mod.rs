@@ -1,4 +1,4 @@
-use gyg_eventsource::{Command, Event, EventName, State};
+use gyg_eventsource::{Command, Event, State};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -37,10 +37,6 @@ impl Event for SimpleEvent {
             SimpleEvent::Added(_) => "added",
             SimpleEvent::Removed(_) => "removed",
         }
-    }
-
-    fn event_list() -> Vec<EventName> {
-        vec!["added", "removed"]
     }
 }
 

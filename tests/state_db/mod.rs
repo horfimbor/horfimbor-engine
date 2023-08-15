@@ -1,6 +1,6 @@
 use gyg_eventsource::model_key::ModelKey;
 use gyg_eventsource::state_db::{StateDb, StateDbError};
-use gyg_eventsource::{Command, Event, EventName, State};
+use gyg_eventsource::{Command, Event, State};
 use redis::{Client, Commands};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -73,10 +73,6 @@ impl Event for PokeEvent {
         match &self {
             PokeEvent::Poked(_) => "poked",
         }
-    }
-
-    fn event_list() -> Vec<EventName> {
-        vec!["poked"]
     }
 }
 

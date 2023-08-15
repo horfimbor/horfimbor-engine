@@ -63,10 +63,8 @@ pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
 pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
     fn event_name(&self) -> EventName;
 
-    fn event_list() -> Vec<EventName>;
-
     fn get_type(&self) -> EventType {
-        EventType::State
+        EventType::Event
     }
 }
 
