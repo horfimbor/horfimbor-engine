@@ -1,3 +1,6 @@
+/// re-export import :
+pub use serde;
+
 pub mod metadata;
 pub mod model_key;
 pub mod repository;
