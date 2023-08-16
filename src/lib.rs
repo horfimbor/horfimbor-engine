@@ -80,27 +80,27 @@ pub trait State: Default + Serialize + DeserializeOwned + Debug + Send + Clone {
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
 }
 
-
 #[cfg(test)]
 mod tests {
-    use serde::Deserialize;
+    use super::*;
     use gyg_eventsource_derive::Command;
     use gyg_eventsource_derive::Event;
-    use super::*;
+    use serde::Deserialize;
 
     #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
     pub enum ToTest {
         Add(usize),
         Reset,
-        SomeOtherVariant{a: String}
+        SomeOtherVariant { a: String },
     }
 
     #[test]
     fn it_works() {
-
         let cmd_add = ToTest::Add(1);
         let cmd_reset = ToTest::Reset;
-        let cmd_other = ToTest::SomeOtherVariant{a:"ok".to_string()};
+        let cmd_other = ToTest::SomeOtherVariant {
+            a: "ok".to_string(),
+        };
 
         assert_eq!(cmd_add.command_name(), "Add");
         assert_eq!(cmd_reset.command_name(), "Reset");
@@ -109,6 +109,5 @@ mod tests {
         assert_eq!(cmd_add.event_name(), "add");
         assert_eq!(cmd_reset.event_name(), "reset");
         assert_eq!(cmd_other.event_name(), "some_other_variant");
-
     }
 }

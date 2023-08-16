@@ -179,8 +179,6 @@ where
         stream_name: &str,
         group_name: &str,
     ) -> Result<(), EventSourceError<<S as State>::Error>> {
-        dbg!(format!("$ce-{}", stream_name));
-
         let mut sub = self
             .event_db
             .subscribe_to_persistent_subscription(
@@ -201,7 +199,6 @@ where
                 std::str::from_utf8(original_event.as_ref()).map_err(EventSourceError::Utf8)?;
 
             let (index, stream_id) = Self::split_event_id(event_id)?;
-            dbg!(&stream_id);
 
             let pos: u64 = index.parse().map_err(|_e| EventSourceError::Unknown)?;
 
@@ -220,7 +217,6 @@ where
                 .ok_or(EventSourceError::Unknown)?;
 
             let original_event = json_event.get_original_event();
-            dbg!(&original_event);
 
             let metadata: Metadata =
                 serde_json::from_slice(original_event.custom_metadata.as_ref())
@@ -233,57 +229,50 @@ where
                 .get(&model_key)
                 .map_err(EventSourceError::StateDbError)?;
 
-            if original_event.revision == 0 {
+            let ordering = if original_event.revision == 0 {
                 if state.info.position.is_some() {
-                    dbg!(format!(
-                        "cache should be empty but is : {:?}",
-                        state.info.position
-                    ));
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
                 }
-                continue;
             } else {
                 match state.info.position {
-                    None => {
-                        state = self.complete_from_es(&model_key, state).await?;
+                    None => Ordering::Less,
+                    Some(pos) => pos.cmp(&(original_event.revision - 1)),
+                }
+            };
 
-                        self.state_db
-                            .set(&model_key, state)
-                            .map_err(EventSourceError::StateDbError)?;
-                        continue;
+            match ordering {
+                Ordering::Less => {
+                    state = self.complete_from_es(&model_key, state).await?;
+                    dbg!(format!(
+                        "cache have been completed from {:?} to {:?}",
+                        state.info.position, original_event.revision,
+                    ));
+
+                    self.state_db
+                        .set(&model_key, state)
+                        .map_err(EventSourceError::StateDbError)?;
+                }
+                Ordering::Equal => {
+                    if metadata.is_event() {
+                        let event = original_event
+                            .as_json::<S::Event>()
+                            .map_err(EventSourceError::Serde)?;
+
+                        state.play_event(&event, Some(original_event.revision));
+                    } else {
+                        state.info.position = Some(original_event.revision);
                     }
-                    Some(pos) => match pos.cmp(&(original_event.revision - 1)) {
-                        Ordering::Less => {
-                            state = self.complete_from_es(&model_key, state).await?;
-
-                            self.state_db
-                                .set(&model_key, state)
-                                .map_err(EventSourceError::StateDbError)?;
-                        }
-                        Ordering::Equal => {
-                            if metadata.is_event() {
-                                let event = original_event
-                                    .as_json::<S::Event>()
-                                    .map_err(EventSourceError::Serde)?;
-
-                                dbg!(&event);
-
-                                state.play_event(&event, Some(original_event.revision));
-                                dbg!(&state);
-                            } else {
-                                state.info.position = Some(original_event.revision);
-                            }
-
-                            self.state_db
-                                .set(&model_key, state)
-                                .map_err(EventSourceError::StateDbError)?;
-                        }
-                        Ordering::Greater => {
-                            dbg!(format!(
-                                "cache should be lower than {} but is : {:?}",
-                                original_event.revision, state.info.position
-                            ));
-                        }
-                    },
+                    self.state_db
+                        .set(&model_key, state)
+                        .map_err(EventSourceError::StateDbError)?;
+                }
+                Ordering::Greater => {
+                    dbg!(format!(
+                        "cache should be lower than {} but is : {:?}",
+                        original_event.revision, state.info.position
+                    ));
                 }
             }
         }
