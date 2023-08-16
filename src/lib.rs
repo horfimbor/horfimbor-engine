@@ -1,7 +1,5 @@
 /// re-export import :
-pub use serde;
 pub use gyg_eventsource_derive;
-pub use uuid;
 
 pub mod metadata;
 pub mod model_key;
