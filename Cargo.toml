@@ -21,4 +21,4 @@ gyg-eventsource-derive = { version = "0.1.0", path = "gyg-eventsource-derive" }
 
 [dev-dependencies]
 rand = "0.8.5"
-redis= { version = "0.23", features = ["tokio-native-tls-comp"] }
+redis= { version = "0.22", features = ["tokio-native-tls-comp"] }
