@@ -1,16 +1,16 @@
 /// re-export import :
 pub use gyg_eventsource_derive;
 
+pub mod cache_db;
 pub mod metadata;
 pub mod model_key;
 pub mod repository;
-pub mod state_db;
 
-const COMMAND_PREFIX: &str = "cmd";
+const COMMAND_PREFIX: &str = "CMD";
 const EVENT_PREFIX: &str = "evt";
 
+use crate::cache_db::CacheDbError;
 use crate::metadata::MetadataError;
-use crate::state_db::StateDbError;
 use eventstore::Error as EventStoreError;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -23,7 +23,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum EventSourceError<S> {
     #[error("Cache error")]
-    StateDbError(StateDbError),
+    StateDbError(CacheDbError),
 
     #[error("Event store error")]
     EventStore(EventStoreError),
@@ -51,28 +51,17 @@ pub type CommandName = &'static str;
 pub type EventName = &'static str;
 pub type StateName = &'static str;
 
-pub enum EventType {
-    State,
-    Event,
-}
-
 pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
     fn command_name(&self) -> CommandName;
 }
 
 pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
     fn event_name(&self) -> EventName;
-
-    fn get_type(&self) -> EventType {
-        EventType::Event
-    }
 }
 
 pub trait Dto: Default + Serialize + DeserializeOwned + Debug + Send + Clone + Sync {
     type Event: Event + Sync + Send;
     type Error: Error + Sync + Send;
-
-    fn name_prefix() -> StateName;
 
     fn play_event(&mut self, event: &Self::Event);
 }

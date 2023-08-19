@@ -1,5 +1,5 @@
+use gyg_eventsource::cache_db::{CacheDb, CacheDbError};
 use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::state_db::{CacheDb, StateDbError};
 use gyg_eventsource::{Command, Dto, Event, State};
 use redis::{Client, Commands};
 use serde::{Deserialize, Serialize};
@@ -25,7 +25,7 @@ impl<S> CacheDb<S> for RedisStateDb<S>
 where
     S: State,
 {
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, StateDbError> {
+    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError> {
         let mut connection = self.client.get_connection().unwrap();
 
         let data: Option<String> = connection.get(key.format()).unwrap();
@@ -33,12 +33,12 @@ where
         Ok(data)
     }
 
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), StateDbError> {
+    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), CacheDbError> {
         let mut connection = self.client.get_connection().unwrap();
 
         connection
             .set(key.format(), state)
-            .map_err(|err| StateDbError::Internal(err.to_string()))?;
+            .map_err(|err| CacheDbError::Internal(err.to_string()))?;
 
         Ok(())
     }
@@ -85,9 +85,6 @@ impl Dto for PokeState {
     type Event = PokeEvent;
     type Error = PokeError;
 
-    fn name_prefix() -> &'static str {
-        "test-Poke"
-    }
     fn play_event(&mut self, event: &Self::Event) {
         match event {
             PokeEvent::Poked(n) => self.nb += n,
@@ -135,11 +132,11 @@ impl<S> CacheDb<S> for NoCache<S>
 where
     S: State,
 {
-    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, StateDbError> {
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
         Ok(None)
     }
 
-    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), StateDbError> {
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
         Ok(())
     }
 }
@@ -165,11 +162,11 @@ impl<S> CacheDb<S> for DtoNoCache<S>
 where
     S: Dto,
 {
-    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, StateDbError> {
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
         Ok(None)
     }
 
-    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), StateDbError> {
-        Err(StateDbError::Internal("Not allowed for dto".to_string()))
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
+        Err(CacheDbError::Internal("Not allowed for dto".to_string()))
     }
 }

@@ -10,9 +10,9 @@ use eventstore::{
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
+use crate::cache_db::CacheDb;
 use crate::metadata::{EventWithMetadata, Metadata};
 use crate::model_key::ModelKey;
-use crate::state_db::CacheDb;
 use crate::State;
 use crate::{Dto, EventSourceError};
 
@@ -23,8 +23,8 @@ where
     C: CacheDb<D>,
 {
     event_db: EventDb,
-    state_db: C,
-    state: PhantomData<D>,
+    cache_db: C,
+    dto: PhantomData<D>,
 }
 
 #[derive(Clone)]
@@ -38,21 +38,14 @@ where
     state: PhantomData<S>,
 }
 
-impl<S, C> StateRepository<S, C>
-where
-    S: Dto,
-    C: CacheDb<S>,
-{
-}
-
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-struct StateInformation {
+struct Position {
     position: Option<u64>,
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct StateWithInfo<S> {
-    info: StateInformation,
+    info: Position,
     state: S,
 }
 
@@ -283,15 +276,15 @@ where
     fn new(event_db: EventDb, state_db: C) -> Self {
         Self {
             event_db,
-            state_db,
-            state: Default::default(),
+            cache_db: state_db,
+            dto: Default::default(),
         }
     }
     fn event_db(&self) -> &EventDb {
         &self.event_db
     }
     fn state_db(&self) -> &C {
-        &self.state_db
+        &self.cache_db
     }
 }
 
@@ -378,9 +371,8 @@ where
             AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream)
         };
 
-        let command_metadata =
-            EventWithMetadata::from_command(command, previous_metadata, S::name_prefix())
-                .map_err(EventSourceError::Metadata)?;
+        let command_metadata = EventWithMetadata::from_command(command, previous_metadata)
+            .map_err(EventSourceError::Metadata)?;
 
         let mut events_data = vec![command_metadata.clone()];
 
@@ -389,9 +381,8 @@ where
         let res_events = events.clone();
 
         for event in events {
-            let event_metadata =
-                EventWithMetadata::from_event(event, &previous_metadata, S::name_prefix())
-                    .map_err(EventSourceError::Metadata)?;
+            let event_metadata = EventWithMetadata::from_event(event, &previous_metadata)
+                .map_err(EventSourceError::Metadata)?;
 
             events_data.push(event_metadata.clone());
             previous_metadata = event_metadata.metadata().to_owned();

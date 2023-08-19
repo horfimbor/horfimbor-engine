@@ -45,10 +45,6 @@ impl Dto for ConcurrentState {
     type Event = ConcurrentEvent;
     type Error = ConcurrentError;
 
-    fn name_prefix() -> &'static str {
-        "concurrent"
-    }
-
     fn play_event(&mut self, event: &Self::Event) {
         match event {
             TimeTaken(name) => {

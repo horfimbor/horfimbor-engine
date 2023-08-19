@@ -7,10 +7,10 @@ pub trait CacheDb<S>: Clone + Send + Sync
 where
     S: Dto,
 {
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, StateDbError>;
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), StateDbError>;
+    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError>;
+    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), CacheDbError>;
 
-    fn get(&self, key: &ModelKey) -> Result<StateWithInfo<S>, StateDbError> {
+    fn get(&self, key: &ModelKey) -> Result<StateWithInfo<S>, CacheDbError> {
         let data = self.get_from_db(key);
 
         match data {
@@ -20,7 +20,7 @@ where
         }
     }
 
-    fn set(&self, key: &ModelKey, state: StateWithInfo<S>) -> Result<(), StateDbError> {
+    fn set(&self, key: &ModelKey, state: StateWithInfo<S>) -> Result<(), CacheDbError> {
         let s = serde_json::to_string(&state)
             .map_err(|_err| todo!("error in StateDb.set is not handled yet"))?;
         self.set_in_db(key, s)
@@ -28,7 +28,7 @@ where
 }
 
 #[derive(Error, Debug, PartialEq)]
-pub enum StateDbError {
+pub enum CacheDbError {
     #[error("Not found")]
     NotFound,
 

@@ -49,9 +49,6 @@ impl Dto for SimpleState {
     type Event = SimpleEvent;
     type Error = SimpleError;
 
-    fn name_prefix() -> &'static str {
-        "test-simple"
-    }
     fn play_event(&mut self, event: &Self::Event) {
         match event {
             SimpleEvent::Added(n) => self.nb += n,
@@ -99,9 +96,6 @@ impl Dto for SimpleNbAddDto {
     type Event = SimpleEvent;
     type Error = SimpleError;
 
-    fn name_prefix() -> &'static str {
-        "test-simple"
-    }
     fn play_event(&mut self, event: &Self::Event) {
         match event {
             SimpleEvent::Added(_) => self.nb += 1,
