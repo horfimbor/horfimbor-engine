@@ -1,3 +1,6 @@
+/// re-export import :
+pub use gyg_eventsource_derive;
+
 pub mod metadata;
 pub mod model_key;
 pub mod repository;
@@ -60,10 +63,8 @@ pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
 pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
     fn event_name(&self) -> EventName;
 
-    fn event_list() -> Vec<EventName>;
-
     fn get_type(&self) -> EventType {
-        EventType::State
+        EventType::Event
     }
 }
 
@@ -77,4 +78,36 @@ pub trait State: Default + Serialize + DeserializeOwned + Debug + Send + Clone {
     fn play_event(&mut self, event: &Self::Event);
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gyg_eventsource_derive::Command;
+    use gyg_eventsource_derive::Event;
+    use serde::Deserialize;
+
+    #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
+    pub enum ToTest {
+        Add(usize),
+        Reset,
+        SomeOtherVariant { a: String },
+    }
+
+    #[test]
+    fn it_works() {
+        let cmd_add = ToTest::Add(1);
+        let cmd_reset = ToTest::Reset;
+        let cmd_other = ToTest::SomeOtherVariant {
+            a: "ok".to_string(),
+        };
+
+        assert_eq!(cmd_add.command_name(), "Add");
+        assert_eq!(cmd_reset.command_name(), "Reset");
+        assert_eq!(cmd_other.command_name(), "SomeOtherVariant");
+
+        assert_eq!(cmd_add.event_name(), "add");
+        assert_eq!(cmd_reset.event_name(), "reset");
+        assert_eq!(cmd_other.event_name(), "some_other_variant");
+    }
 }

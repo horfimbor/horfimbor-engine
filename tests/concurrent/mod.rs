@@ -1,6 +1,6 @@
 use std::thread;
 
-use gyg_eventsource::{Command, Event, EventName, State};
+use gyg_eventsource::{Command, Event, State};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::Duration;
@@ -30,10 +30,6 @@ impl Event for ConcurrentEvent {
         match &self {
             TimeTaken(_) => "time_taken",
         }
-    }
-
-    fn event_list() -> Vec<EventName> {
-        vec!["time_taken"]
     }
 }
 
