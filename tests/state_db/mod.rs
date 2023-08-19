@@ -1,6 +1,6 @@
 use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::state_db::{StateDb, StateDbError};
-use gyg_eventsource::{Command, Event, State};
+use gyg_eventsource::state_db::{CacheDb, StateDbError};
+use gyg_eventsource::{Command, Dto, Event, State};
 use redis::{Client, Commands};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -21,7 +21,7 @@ impl<S> RedisStateDb<S> {
     }
 }
 
-impl<S> StateDb<S> for RedisStateDb<S>
+impl<S> CacheDb<S> for RedisStateDb<S>
 where
     S: State,
 {
@@ -81,9 +81,8 @@ pub struct PokeState {
     pub nb: u32,
 }
 
-impl State for PokeState {
+impl Dto for PokeState {
     type Event = PokeEvent;
-    type Command = PokeCommand;
     type Error = PokeError;
 
     fn name_prefix() -> &'static str {
@@ -94,6 +93,10 @@ impl State for PokeState {
             PokeEvent::Poked(n) => self.nb += n,
         }
     }
+}
+
+impl State for PokeState {
+    type Command = PokeCommand;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
@@ -128,7 +131,7 @@ impl<S> Default for NoCache<S> {
     }
 }
 
-impl<S> StateDb<S> for NoCache<S>
+impl<S> CacheDb<S> for NoCache<S>
 where
     S: State,
 {
@@ -138,5 +141,35 @@ where
 
     fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), StateDbError> {
         Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct DtoNoCache<S> {
+    state: PhantomData<S>,
+}
+
+impl<S> DtoNoCache<S> {
+    pub fn new() -> Self {
+        Self { state: PhantomData }
+    }
+}
+
+impl<S> Default for DtoNoCache<S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<S> CacheDb<S> for DtoNoCache<S>
+where
+    S: Dto,
+{
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, StateDbError> {
+        Ok(None)
+    }
+
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), StateDbError> {
+        Err(StateDbError::Internal("Not allowed for dto".to_string()))
     }
 }

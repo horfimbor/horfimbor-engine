@@ -68,14 +68,17 @@ pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
     }
 }
 
-pub trait State: Default + Serialize + DeserializeOwned + Debug + Send + Clone {
-    type Event: Event;
-    type Command: Command + Sync + Send;
-    type Error: Error;
+pub trait Dto: Default + Serialize + DeserializeOwned + Debug + Send + Clone + Sync {
+    type Event: Event + Sync + Send;
+    type Error: Error + Sync + Send;
 
     fn name_prefix() -> StateName;
 
     fn play_event(&mut self, event: &Self::Event);
+}
+
+pub trait State: Dto {
+    type Command: Command + Sync + Send;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
 }

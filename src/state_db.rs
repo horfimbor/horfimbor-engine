@@ -1,11 +1,11 @@
 use crate::model_key::ModelKey;
 use crate::repository::StateWithInfo;
-use crate::State;
+use crate::Dto;
 use thiserror::Error;
 
-pub trait StateDb<S>: Clone + Send
+pub trait CacheDb<S>: Clone + Send + Sync
 where
-    S: State,
+    S: Dto,
 {
     fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, StateDbError>;
     fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), StateDbError>;
@@ -21,7 +21,8 @@ where
     }
 
     fn set(&self, key: &ModelKey, state: StateWithInfo<S>) -> Result<(), StateDbError> {
-        let s = serde_json::to_string(&state).map_err(|_err| todo!())?;
+        let s = serde_json::to_string(&state)
+            .map_err(|_err| todo!("error in StateDb.set is not handled yet"))?;
         self.set_in_db(key, s)
     }
 }

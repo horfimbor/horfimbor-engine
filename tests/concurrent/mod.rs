@@ -1,6 +1,6 @@
 use std::thread;
 
-use gyg_eventsource::{Command, Event, State};
+use gyg_eventsource::{Command, Dto, Event, State};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::Duration;
@@ -41,9 +41,8 @@ pub struct ConcurrentState {
     pub names: Vec<String>,
 }
 
-impl State for ConcurrentState {
+impl Dto for ConcurrentState {
     type Event = ConcurrentEvent;
-    type Command = ConcurrentCommand;
     type Error = ConcurrentError;
 
     fn name_prefix() -> &'static str {
@@ -57,6 +56,10 @@ impl State for ConcurrentState {
             }
         }
     }
+}
+
+impl State for ConcurrentState {
+    type Command = ConcurrentCommand;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
