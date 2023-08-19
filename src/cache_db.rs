@@ -1,5 +1,5 @@
 use crate::model_key::ModelKey;
-use crate::repository::StateWithInfo;
+use crate::repository::ModelWithPosition;
 use crate::Dto;
 use thiserror::Error;
 
@@ -10,18 +10,18 @@ where
     fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError>;
     fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), CacheDbError>;
 
-    fn get(&self, key: &ModelKey) -> Result<StateWithInfo<S>, CacheDbError> {
+    fn get(&self, key: &ModelKey) -> Result<ModelWithPosition<S>, CacheDbError> {
         let data = self.get_from_db(key);
 
         match data {
-            Ok(None) => Ok(StateWithInfo::default()),
+            Ok(None) => Ok(ModelWithPosition::default()),
             Ok(Some(value)) => Ok(serde_json::from_str(value.as_str()).unwrap_or_default()),
             Err(err) => Err(err),
         }
     }
 
-    fn set(&self, key: &ModelKey, state: StateWithInfo<S>) -> Result<(), CacheDbError> {
-        let s = serde_json::to_string(&state)
+    fn set(&self, key: &ModelKey, data: ModelWithPosition<S>) -> Result<(), CacheDbError> {
+        let s = serde_json::to_string(&data)
             .map_err(|_err| todo!("error in StateDb.set is not handled yet"))?;
         self.set_in_db(key, s)
     }

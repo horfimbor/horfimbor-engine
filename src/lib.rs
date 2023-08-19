@@ -23,7 +23,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum EventSourceError<S> {
     #[error("Cache error")]
-    StateDbError(CacheDbError),
+    CacheDbError(CacheDbError),
 
     #[error("Event store error")]
     EventStore(EventStoreError),

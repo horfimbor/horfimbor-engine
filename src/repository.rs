@@ -30,7 +30,7 @@ where
 #[derive(Clone)]
 pub struct StateRepository<S, C>
 where
-    S: Dto,
+    S: State,
     C: CacheDb<S>,
 {
     event_db: EventDb,
@@ -39,21 +39,21 @@ where
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-pub struct StateWithInfo<S> {
+pub struct ModelWithPosition<M> {
     position: Option<u64>,
-    state: S,
+    model: M,
 }
 
-impl<S> StateWithInfo<S>
+impl<M> ModelWithPosition<M>
 where
-    S: Dto,
+    M: Dto,
 {
-    pub fn state(&self) -> &S {
-        &self.state
+    pub fn state(&self) -> &M {
+        &self.model
     }
 
-    pub fn play_event(&mut self, event: &S::Event, position: Option<u64>) {
-        self.state.play_event(event);
+    pub fn play_event(&mut self, event: &M::Event, position: Option<u64>) {
+        self.model.play_event(event);
 
         self.position = position
     }
@@ -65,21 +65,21 @@ where
     D: Dto,
     C: CacheDb<D>,
 {
-    fn new(event_db: EventDb, state_db: C) -> Self;
+    fn new(event_db: EventDb, cache_db: C) -> Self;
     fn event_db(&self) -> &EventDb;
-    fn state_db(&self) -> &C;
+    fn cache_db(&self) -> &C;
 
     async fn get_model(
         &self,
         key: &ModelKey,
-    ) -> Result<StateWithInfo<D>, EventSourceError<D::Error>>
+    ) -> Result<ModelWithPosition<D>, EventSourceError<D::Error>>
     where
         D: Dto + DeserializeOwned,
     {
         let value = self
-            .state_db()
+            .cache_db()
             .get(key)
-            .map_err(EventSourceError::StateDbError)?;
+            .map_err(EventSourceError::CacheDbError)?;
 
         self.complete_from_es(key, &value).await
     }
@@ -87,9 +87,9 @@ where
     async fn complete_from_es(
         &self,
         key: &ModelKey,
-        value: &StateWithInfo<D>,
-    ) -> Result<StateWithInfo<D>, EventSourceError<<D as Dto>::Error>> {
-        let mut state: D = value.state.clone();
+        value: &ModelWithPosition<D>,
+    ) -> Result<ModelWithPosition<D>, EventSourceError<<D as Dto>::Error>> {
+        let mut dto: D = value.model.clone();
         let mut position = value.position;
 
         let options = ReadStreamOptions::default();
@@ -117,13 +117,16 @@ where
                     .as_json::<D::Event>()
                     .map_err(EventSourceError::Serde)?;
 
-                state.play_event(&event);
+                dto.play_event(&event);
             }
 
             position = Some(original_event.revision)
         }
 
-        let result = StateWithInfo { position, state };
+        let result = ModelWithPosition {
+            position,
+            model: dto,
+        };
 
         Ok(result)
     }
@@ -195,19 +198,19 @@ where
 
             let model_key: ModelKey = stream_id.into();
 
-            let mut state = self
-                .state_db()
+            let mut model = self
+                .cache_db()
                 .get(&model_key)
-                .map_err(EventSourceError::StateDbError)?;
+                .map_err(EventSourceError::CacheDbError)?;
 
             let ordering = if original_event.revision == 0 {
-                if state.position.is_some() {
+                if model.position.is_some() {
                     Ordering::Greater
                 } else {
                     Ordering::Equal
                 }
             } else {
-                match state.position {
+                match model.position {
                     None => Ordering::Less,
                     Some(pos) => pos.cmp(&(original_event.revision - 1)),
                 }
@@ -215,15 +218,15 @@ where
 
             match ordering {
                 Ordering::Less => {
-                    state = self.complete_from_es(&model_key, &state).await?;
+                    model = self.complete_from_es(&model_key, &model).await?;
                     dbg!(format!(
                         "cache have been completed from {:?} to {:?}",
-                        state.position, original_event.revision,
+                        model.position, original_event.revision,
                     ));
 
-                    self.state_db()
-                        .set(&model_key, state)
-                        .map_err(EventSourceError::StateDbError)?;
+                    self.cache_db()
+                        .set(&model_key, model)
+                        .map_err(EventSourceError::CacheDbError)?;
                 }
                 Ordering::Equal => {
                     if metadata.is_event() {
@@ -231,18 +234,18 @@ where
                             .as_json::<D::Event>()
                             .map_err(EventSourceError::Serde)?;
 
-                        state.play_event(&event, Some(original_event.revision));
+                        model.play_event(&event, Some(original_event.revision));
                     } else {
-                        state.position = Some(original_event.revision);
+                        model.position = Some(original_event.revision);
                     }
-                    self.state_db()
-                        .set(&model_key, state)
-                        .map_err(EventSourceError::StateDbError)?;
+                    self.cache_db()
+                        .set(&model_key, model)
+                        .map_err(EventSourceError::CacheDbError)?;
                 }
                 Ordering::Greater => {
                     dbg!(format!(
                         "cache should be lower than {} but is : {:?}",
-                        original_event.revision, state.position
+                        original_event.revision, model.position
                     ));
                 }
             }
@@ -268,17 +271,17 @@ where
     D: Dto,
     C: CacheDb<D>,
 {
-    fn new(event_db: EventDb, state_db: C) -> Self {
+    fn new(event_db: EventDb, cache_db: C) -> Self {
         Self {
             event_db,
-            cache_db: state_db,
+            cache_db,
             dto: Default::default(),
         }
     }
     fn event_db(&self) -> &EventDb {
         &self.event_db
     }
-    fn state_db(&self) -> &C {
+    fn cache_db(&self) -> &C {
         &self.cache_db
     }
 }
@@ -299,7 +302,7 @@ where
     fn event_db(&self) -> &EventDb {
         &self.event_db
     }
-    fn state_db(&self) -> &C {
+    fn cache_db(&self) -> &C {
         &self.state_db
     }
 }
@@ -351,9 +354,9 @@ where
     where
         S: State + Sync,
     {
-        let model: StateWithInfo<S> = self.get_model(key).await?;
+        let model: ModelWithPosition<S> = self.get_model(key).await?;
 
-        let state = model.state;
+        let state = model.model;
 
         let events = state
             .try_command(command.clone())

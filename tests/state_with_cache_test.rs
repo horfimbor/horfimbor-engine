@@ -83,7 +83,7 @@ async fn with_cache() {
     let data_redis: Option<String> = connection.get(key.format()).unwrap();
     assert_eq!(
         data_redis,
-        Some(r#"{"position":3,"state":{"nb":182}}"#.to_string())
+        Some(r#"{"position":3,"model":{"nb":182}}"#.to_string())
     );
 }
 
