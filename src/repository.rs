@@ -39,13 +39,8 @@ where
 }
 
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
-struct Position {
-    position: Option<u64>,
-}
-
-#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct StateWithInfo<S> {
-    info: Position,
+    position: Option<u64>,
     state: S,
 }
 
@@ -60,7 +55,7 @@ where
     pub fn play_event(&mut self, event: &S::Event, position: Option<u64>) {
         self.state.play_event(event);
 
-        self.info.position = position
+        self.position = position
     }
 }
 
@@ -95,10 +90,10 @@ where
         value: &StateWithInfo<D>,
     ) -> Result<StateWithInfo<D>, EventSourceError<<D as Dto>::Error>> {
         let mut state: D = value.state.clone();
-        let mut info = value.info.clone();
+        let mut position = value.position;
 
         let options = ReadStreamOptions::default();
-        let options = if let Some(position) = info.position {
+        let options = if let Some(position) = value.position {
             options.position(StreamPosition::Position(position + 1))
         } else {
             options.position(StreamPosition::Start)
@@ -125,10 +120,10 @@ where
                 state.play_event(&event);
             }
 
-            info.position = Some(original_event.revision)
+            position = Some(original_event.revision)
         }
 
-        let result = StateWithInfo { info, state };
+        let result = StateWithInfo { position, state };
 
         Ok(result)
     }
@@ -206,13 +201,13 @@ where
                 .map_err(EventSourceError::StateDbError)?;
 
             let ordering = if original_event.revision == 0 {
-                if state.info.position.is_some() {
+                if state.position.is_some() {
                     Ordering::Greater
                 } else {
                     Ordering::Equal
                 }
             } else {
-                match state.info.position {
+                match state.position {
                     None => Ordering::Less,
                     Some(pos) => pos.cmp(&(original_event.revision - 1)),
                 }
@@ -223,7 +218,7 @@ where
                     state = self.complete_from_es(&model_key, &state).await?;
                     dbg!(format!(
                         "cache have been completed from {:?} to {:?}",
-                        state.info.position, original_event.revision,
+                        state.position, original_event.revision,
                     ));
 
                     self.state_db()
@@ -238,7 +233,7 @@ where
 
                         state.play_event(&event, Some(original_event.revision));
                     } else {
-                        state.info.position = Some(original_event.revision);
+                        state.position = Some(original_event.revision);
                     }
                     self.state_db()
                         .set(&model_key, state)
@@ -247,7 +242,7 @@ where
                 Ordering::Greater => {
                     dbg!(format!(
                         "cache should be lower than {} but is : {:?}",
-                        original_event.revision, state.info.position
+                        original_event.revision, state.position
                     ));
                 }
             }
@@ -359,13 +354,12 @@ where
         let model: StateWithInfo<S> = self.get_model(key).await?;
 
         let state = model.state;
-        let info = model.info;
 
         let events = state
             .try_command(command.clone())
             .map_err(EventSourceError::State)?;
 
-        let options = if let Some(position) = info.position {
+        let options = if let Some(position) = model.position {
             AppendToStreamOptions::default().expected_revision(ExpectedRevision::Exact(position))
         } else {
             AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream)
