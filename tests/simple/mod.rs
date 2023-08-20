@@ -1,4 +1,4 @@
-use gyg_eventsource::{Command, Event, State};
+use gyg_eventsource::{Command, Dto, Event, State};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -45,20 +45,20 @@ pub struct SimpleState {
     pub nb: u32,
 }
 
-impl State for SimpleState {
+impl Dto for SimpleState {
     type Event = SimpleEvent;
-    type Command = SimpleCommand;
     type Error = SimpleError;
 
-    fn name_prefix() -> &'static str {
-        "test-simple"
-    }
     fn play_event(&mut self, event: &Self::Event) {
         match event {
             SimpleEvent::Added(n) => self.nb += n,
             SimpleEvent::Removed(n) => self.nb -= n,
         }
     }
+}
+
+impl State for SimpleState {
+    type Command = SimpleCommand;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
@@ -83,6 +83,23 @@ impl State for SimpleState {
                 }
             }
             SimpleCommand::Set(n) => Ok(vec![SimpleEvent::Removed(self.nb), SimpleEvent::Added(n)]),
+        }
+    }
+}
+
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]
+pub struct SimpleNbAddDto {
+    pub nb: u32,
+}
+
+impl Dto for SimpleNbAddDto {
+    type Event = SimpleEvent;
+    type Error = SimpleError;
+
+    fn play_event(&mut self, event: &Self::Event) {
+        match event {
+            SimpleEvent::Added(_) => self.nb += 1,
+            _ => {}
         }
     }
 }

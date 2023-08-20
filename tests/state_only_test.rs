@@ -8,61 +8,83 @@ use tokio::time::sleep;
 use uuid::Uuid;
 
 use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::repository::EventRepository;
+use gyg_eventsource::repository::Repository;
+use gyg_eventsource::repository::{DtoRepository, StateRepository};
 
 use crate::concurrent::{ConcurrentCommand, ConcurrentState};
-use crate::simple::{SimpleCommand, SimpleState};
-use crate::state_db::NoCache;
+use crate::simple::{SimpleCommand, SimpleNbAddDto, SimpleState};
+use crate::state_db::{DtoNoCache, NoCache};
 
 mod concurrent;
 mod simple;
 mod state_db;
 
-type EasyNoCache = NoCache<SimpleState>;
+type EasyNoCacheState = NoCache<SimpleState>;
+type EasyNoCacheDto = DtoNoCache<SimpleNbAddDto>;
 
 #[tokio::test]
 async fn easy_case() {
-    let repo = EventRepository::new(get_event_db(), EasyNoCache::new());
+    let repo_state = StateRepository::new(get_event_db(), EasyNoCacheState::new());
+
+    let repo_dto = DtoRepository::new(get_event_db(), EasyNoCacheDto::new());
 
     let key = ModelKey::new("simple_test".to_string(), Uuid::new_v4().to_string());
 
-    let model = repo.get_model(&key).await.unwrap();
+    // test empty data :
 
+    let model = repo_state.get_model(&key).await.unwrap();
     assert_eq!(model.state(), &SimpleState { nb: 0 });
 
-    let added = repo
+    let dto = repo_dto.get_model(&key).await.unwrap();
+    assert_eq!(dto.state(), &SimpleNbAddDto { nb: 0 });
+
+    // test by adding 17
+
+    let added = repo_state
         .add_command(&key, SimpleCommand::Add(17), None)
         .await
         .unwrap();
 
     assert_eq!(added, (SimpleState { nb: 17 }));
 
-    let model = repo.get_model(&key).await.unwrap();
-
+    let model = repo_state.get_model(&key).await.unwrap();
     assert_eq!(model.state(), &SimpleState { nb: 17 });
 
-    let model = repo.get_model(&key).await.unwrap();
+    let dto = repo_dto.get_model(&key).await.unwrap();
+    assert_eq!(dto.state(), &SimpleNbAddDto { nb: 1 });
 
-    assert_eq!(model.state(), &SimpleState { nb: 17 });
+    // test by setting 50
 
-    repo.add_command(&key, SimpleCommand::Set(50), None)
+    repo_state
+        .add_command(&key, SimpleCommand::Set(50), None)
         .await
         .unwrap();
 
-    let model = repo.get_model(&key).await.unwrap();
-
+    let model = repo_state.get_model(&key).await.unwrap();
     assert_eq!(model.state(), &SimpleState { nb: 50 });
 
-    let model = repo.get_model(&key).await.unwrap();
+    let dto = repo_dto.get_model(&key).await.unwrap();
+    assert_eq!(dto.state(), &SimpleNbAddDto { nb: 2 });
 
+    // test by setting 50 another time
+
+    repo_state
+        .add_command(&key, SimpleCommand::Set(50), None)
+        .await
+        .unwrap();
+
+    let model = repo_state.get_model(&key).await.unwrap();
     assert_eq!(model.state(), &SimpleState { nb: 50 });
+
+    let dto = repo_dto.get_model(&key).await.unwrap();
+    assert_eq!(dto.state(), &SimpleNbAddDto { nb: 3 });
 }
 
 type ConcurrentNoCache = NoCache<ConcurrentState>;
 
 #[tokio::test]
 async fn concurrent_case() {
-    let repo = EventRepository::new(get_event_db(), ConcurrentNoCache::new());
+    let repo = StateRepository::new(get_event_db(), ConcurrentNoCache::new());
 
     let key = ModelKey::new("concurrent_test".to_string(), Uuid::new_v4().to_string());
 

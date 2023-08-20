@@ -1,6 +1,6 @@
+use gyg_eventsource::cache_db::{CacheDb, CacheDbError};
 use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::state_db::{StateDb, StateDbError};
-use gyg_eventsource::{Command, Event, State};
+use gyg_eventsource::{Command, Dto, Event, State};
 use redis::{Client, Commands};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -21,11 +21,11 @@ impl<S> RedisStateDb<S> {
     }
 }
 
-impl<S> StateDb<S> for RedisStateDb<S>
+impl<S> CacheDb<S> for RedisStateDb<S>
 where
     S: State,
 {
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, StateDbError> {
+    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError> {
         let mut connection = self.client.get_connection().unwrap();
 
         let data: Option<String> = connection.get(key.format()).unwrap();
@@ -33,12 +33,12 @@ where
         Ok(data)
     }
 
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), StateDbError> {
+    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), CacheDbError> {
         let mut connection = self.client.get_connection().unwrap();
 
         connection
             .set(key.format(), state)
-            .map_err(|err| StateDbError::Internal(err.to_string()))?;
+            .map_err(|err| CacheDbError::Internal(err.to_string()))?;
 
         Ok(())
     }
@@ -81,19 +81,19 @@ pub struct PokeState {
     pub nb: u32,
 }
 
-impl State for PokeState {
+impl Dto for PokeState {
     type Event = PokeEvent;
-    type Command = PokeCommand;
     type Error = PokeError;
 
-    fn name_prefix() -> &'static str {
-        "test-Poke"
-    }
     fn play_event(&mut self, event: &Self::Event) {
         match event {
             PokeEvent::Poked(n) => self.nb += n,
         }
     }
+}
+
+impl State for PokeState {
+    type Command = PokeCommand;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
@@ -128,15 +128,45 @@ impl<S> Default for NoCache<S> {
     }
 }
 
-impl<S> StateDb<S> for NoCache<S>
+impl<S> CacheDb<S> for NoCache<S>
 where
     S: State,
 {
-    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, StateDbError> {
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
         Ok(None)
     }
 
-    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), StateDbError> {
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
         Ok(())
+    }
+}
+
+#[derive(Clone)]
+pub struct DtoNoCache<S> {
+    state: PhantomData<S>,
+}
+
+impl<S> DtoNoCache<S> {
+    pub fn new() -> Self {
+        Self { state: PhantomData }
+    }
+}
+
+impl<S> Default for DtoNoCache<S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<S> CacheDb<S> for DtoNoCache<S>
+where
+    S: Dto,
+{
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
+        Ok(None)
+    }
+
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
+        Err(CacheDbError::Internal("Not allowed for dto".to_string()))
     }
 }
