@@ -4,6 +4,7 @@ pub mod redis;
 use crate::model_key::ModelKey;
 use crate::repository::ModelWithPosition;
 use crate::Dto;
+use std::marker::PhantomData;
 use thiserror::Error;
 
 pub trait CacheDb<S>: Clone + Send + Sync
@@ -43,4 +44,34 @@ pub enum CacheDbError {
 
     #[error("internal `{0}`")]
     Internal(String),
+}
+
+#[derive(Clone)]
+pub struct NoCache<S> {
+    state: PhantomData<S>,
+}
+
+impl<S> NoCache<S> {
+    pub fn new() -> Self {
+        Self { state: PhantomData }
+    }
+}
+
+impl<S> Default for NoCache<S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<S> CacheDb<S> for NoCache<S>
+where
+    S: Dto,
+{
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
+        Ok(None)
+    }
+
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
+        Ok(())
+    }
 }

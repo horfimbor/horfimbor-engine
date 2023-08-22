@@ -1,8 +1,5 @@
-use gyg_eventsource::cache_db::{CacheDb, CacheDbError};
-use gyg_eventsource::model_key::ModelKey;
 use gyg_eventsource::{Command, Dto, Event, State};
 use serde::{Deserialize, Serialize};
-use std::marker::PhantomData;
 use thiserror::Error;
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
@@ -69,65 +66,5 @@ impl State for PokeState {
                 }
             }
         }
-    }
-}
-
-#[derive(Clone)]
-pub struct NoCache<S> {
-    state: PhantomData<S>,
-}
-
-impl<S> NoCache<S> {
-    pub fn new() -> Self {
-        Self { state: PhantomData }
-    }
-}
-
-impl<S> Default for NoCache<S> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<S> CacheDb<S> for NoCache<S>
-where
-    S: State,
-{
-    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
-        Ok(None)
-    }
-
-    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
-        Ok(())
-    }
-}
-
-#[derive(Clone)]
-pub struct DtoNoCache<S> {
-    state: PhantomData<S>,
-}
-
-impl<S> DtoNoCache<S> {
-    pub fn new() -> Self {
-        Self { state: PhantomData }
-    }
-}
-
-impl<S> Default for DtoNoCache<S> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<S> CacheDb<S> for DtoNoCache<S>
-where
-    S: Dto,
-{
-    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
-        Ok(None)
-    }
-
-    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
-        Err(CacheDbError::Internal("Not allowed for dto".to_string()))
     }
 }

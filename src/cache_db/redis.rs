@@ -1,6 +1,6 @@
 use crate::cache_db::{CacheDb, CacheDbError};
 use crate::model_key::ModelKey;
-use crate::State;
+use crate::Dto;
 use redis::{Client, Commands};
 use std::marker::PhantomData;
 
@@ -21,7 +21,7 @@ impl<S> RedisStateDb<S> {
 
 impl<S> CacheDb<S> for RedisStateDb<S>
 where
-    S: State,
+    S: Dto,
 {
     fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError> {
         let mut connection = self
