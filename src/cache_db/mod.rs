@@ -1,3 +1,6 @@
+#[cfg(feature = "cache-redis")]
+pub mod redis;
+
 use crate::model_key::ModelKey;
 use crate::repository::ModelWithPosition;
 use crate::Dto;

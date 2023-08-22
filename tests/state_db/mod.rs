@@ -1,48 +1,9 @@
 use gyg_eventsource::cache_db::{CacheDb, CacheDbError};
 use gyg_eventsource::model_key::ModelKey;
 use gyg_eventsource::{Command, Dto, Event, State};
-use redis::{Client, Commands};
 use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use thiserror::Error;
-
-#[derive(Clone)]
-pub struct RedisStateDb<S> {
-    client: Client,
-    state: PhantomData<S>,
-}
-
-impl<S> RedisStateDb<S> {
-    pub fn new(client: Client) -> Self {
-        Self {
-            client,
-            state: PhantomData,
-        }
-    }
-}
-
-impl<S> CacheDb<S> for RedisStateDb<S>
-where
-    S: State,
-{
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError> {
-        let mut connection = self.client.get_connection().unwrap();
-
-        let data: Option<String> = connection.get(key.format()).unwrap();
-
-        Ok(data)
-    }
-
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), CacheDbError> {
-        let mut connection = self.client.get_connection().unwrap();
-
-        connection
-            .set(key.format(), state)
-            .map_err(|err| CacheDbError::Internal(err.to_string()))?;
-
-        Ok(())
-    }
-}
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub enum PokeCommand {
