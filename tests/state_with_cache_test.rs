@@ -76,7 +76,7 @@ async fn with_cache() {
 
     assert_eq!(added, (PokeState { nb: 182 }));
 
-    sleep(Duration::from_millis(1000)).await;
+    sleep(Duration::from_millis(2000)).await;
 
     let data_es = repo.get_model(&key).await.unwrap();
     dbg!(data_es);
