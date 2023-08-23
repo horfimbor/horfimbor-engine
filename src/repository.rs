@@ -161,6 +161,8 @@ where
         stream_name: &str,
         group_name: &str,
     ) -> Result<(), EventSourceError<<D as Dto>::Error>> {
+        self.create_subscription(stream_name, group_name).await?;
+
         let mut sub = self
             .event_db()
             .subscribe_to_persistent_subscription(
