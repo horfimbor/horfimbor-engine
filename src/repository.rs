@@ -259,6 +259,8 @@ where
                     ));
                 }
             }
+
+            sub.ack(event).await.map_err(EventSourceError::EventStore)?;
         }
     }
 
