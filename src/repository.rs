@@ -136,14 +136,22 @@ where
         stream_name: &str,
         group_name: &str,
     ) -> Result<(), EventSourceError<D::Error>> {
-        self.event_db()
+        let created = self
+            .event_db()
             .create_persistent_subscription(
                 format!("$ce-{}", stream_name),
                 group_name,
                 &Default::default(),
             )
-            .await
-            .map_err(EventSourceError::EventStore)?;
+            .await;
+
+        match created {
+            Ok(_) => {}
+            Err(e) => match e {
+                Error::ResourceAlreadyExists => {}
+                _ => return Err(EventSourceError::EventStore(e)),
+            },
+        }
 
         Ok(())
     }
