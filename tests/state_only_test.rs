@@ -4,6 +4,7 @@ use std::time::Duration;
 use eventstore::{Client as EventClient, Client};
 use futures::executor::block_on;
 
+use gyg_eventsource::cache_db::NoCache;
 use tokio::time::sleep;
 use uuid::Uuid;
 
@@ -13,14 +14,13 @@ use gyg_eventsource::repository::{DtoRepository, StateRepository};
 
 use crate::concurrent::{ConcurrentCommand, ConcurrentState};
 use crate::simple::{SimpleCommand, SimpleNbAddDto, SimpleState};
-use crate::state_db::{DtoNoCache, NoCache};
 
 mod concurrent;
 mod simple;
 mod state_db;
 
 type EasyNoCacheState = NoCache<SimpleState>;
-type EasyNoCacheDto = DtoNoCache<SimpleNbAddDto>;
+type EasyNoCacheDto = NoCache<SimpleNbAddDto>;
 
 #[tokio::test]
 async fn easy_case() {

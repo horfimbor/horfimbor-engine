@@ -1,4 +1,5 @@
 use eventstore::{Client as EventClient, Client};
+use gyg_eventsource::cache_db::redis::RedisStateDb;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use redis::Commands;
@@ -11,7 +12,7 @@ use gyg_eventsource::model_key::ModelKey;
 use gyg_eventsource::repository::Repository;
 use gyg_eventsource::repository::StateRepository;
 
-use crate::state_db::{PokeCommand, PokeState, RedisStateDb};
+use crate::state_db::{PokeCommand, PokeState};
 
 mod concurrent;
 mod simple;
@@ -75,7 +76,7 @@ async fn with_cache() {
 
     assert_eq!(added, (PokeState { nb: 182 }));
 
-    sleep(Duration::from_millis(1000)).await;
+    sleep(Duration::from_millis(2000)).await;
 
     let data_es = repo.get_model(&key).await.unwrap();
     dbg!(data_es);
