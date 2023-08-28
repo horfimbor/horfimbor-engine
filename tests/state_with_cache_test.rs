@@ -37,7 +37,7 @@ async fn with_cache() {
         let state_repo = state_repo.clone();
 
         state_repo
-            .listen(name2.as_str(), name2.as_str())
+            .cache_dto(name2.as_str(), name2.as_str())
             .await
             .unwrap();
     });

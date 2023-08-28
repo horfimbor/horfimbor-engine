@@ -5,7 +5,8 @@ use std::marker::PhantomData;
 
 use eventstore::{
     AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
-    ReadStreamOptions, ResolvedEvent, StreamPosition,
+    ReadStreamOptions, ResolvedEvent,
+    StreamPosition, SubscribeToPersistentSubscriptionOptions,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -156,19 +157,21 @@ where
         Ok(())
     }
 
-    async fn listen(
+    async fn cache_dto(
         &self,
         stream_name: &str,
         group_name: &str,
     ) -> Result<(), EventSourceError<<D as Dto>::Error>> {
         self.create_subscription(stream_name, group_name).await?;
 
+        let options = SubscribeToPersistentSubscriptionOptions::default().buffer_size(1);
+
         let mut sub = self
             .event_db()
             .subscribe_to_persistent_subscription(
                 format!("$ce-{}", stream_name),
                 group_name,
-                &Default::default(),
+                &options,
             )
             .await
             .map_err(EventSourceError::EventStore)?;
