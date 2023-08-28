@@ -5,8 +5,8 @@ use std::marker::PhantomData;
 
 use eventstore::{
     AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
-    ReadStreamOptions, ResolvedEvent,
-    StreamPosition, SubscribeToPersistentSubscriptionOptions,
+    ReadStreamOptions, ResolvedEvent, RetryOptions, StreamPosition,
+    SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -155,6 +155,20 @@ where
         }
 
         Ok(())
+    }
+
+    async fn get_subscription(&self, stream_name: &str, position: Option<u64>) -> Subscription {
+        let mut options =
+            SubscribeToStreamOptions::default().retry_options(RetryOptions::default());
+
+        options = match position {
+            None => options.start_from(StreamPosition::Start),
+            Some(n) => options.start_from(StreamPosition::Position(n)),
+        };
+
+        self.event_db()
+            .subscribe_to_stream(stream_name, &options)
+            .await
     }
 
     async fn cache_dto(
