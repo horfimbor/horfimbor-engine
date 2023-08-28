@@ -28,25 +28,19 @@ async fn with_cache() {
         .map(char::from)
         .collect();
 
+    let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
+    let event_store = get_event_db();
+    let state_repo = StateRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
+
     let name2 = name.clone();
     tokio::spawn(async move {
-        let event_store = get_event_db();
-        let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
-        let state_repo =
-            StateRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
-
-        state_repo
-            .create_subscription(name2.as_str(), name2.as_str())
-            .await
-            .unwrap();
+        let state_repo = state_repo.clone();
 
         state_repo
             .listen(name2.as_str(), name2.as_str())
             .await
             .unwrap();
     });
-
-    let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
 
     let event_store = get_event_db();
 
@@ -76,15 +70,20 @@ async fn with_cache() {
 
     assert_eq!(added, (PokeState { nb: 182 }));
 
-    sleep(Duration::from_millis(2000)).await;
-
-    let data_es = repo.get_model(&key).await.unwrap();
-    dbg!(data_es);
+    sleep(Duration::from_millis(1000)).await;
 
     let data_redis: Option<String> = connection.get(key.format()).unwrap();
     assert_eq!(
         data_redis,
         Some(r#"{"position":3,"model":{"nb":182}}"#.to_string())
+    );
+
+    let data_es = repo.get_model(&key).await.unwrap();
+    dbg!(data_es.clone());
+
+    assert_eq!(
+        serde_json::to_string(&data_es).unwrap(),
+        r#"{"position":3,"model":{"nb":182}}"#.to_string()
     );
 }
 
