@@ -70,15 +70,20 @@ async fn with_cache() {
 
     assert_eq!(added, (PokeState { nb: 182 }));
 
-    sleep(Duration::from_millis(2000)).await;
-
-    let data_es = repo.get_model(&key).await.unwrap();
-    dbg!(data_es);
+    sleep(Duration::from_millis(1000)).await;
 
     let data_redis: Option<String> = connection.get(key.format()).unwrap();
     assert_eq!(
         data_redis,
         Some(r#"{"position":3,"model":{"nb":182}}"#.to_string())
+    );
+
+    let data_es = repo.get_model(&key).await.unwrap();
+    dbg!(data_es.clone());
+
+    assert_eq!(
+        serde_json::to_string(&data_es).unwrap(),
+        r#"{"position":3,"model":{"nb":182}}"#.to_string()
     );
 }
 
