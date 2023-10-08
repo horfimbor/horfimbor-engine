@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use crate::cache_db::CacheDb;
 use crate::metadata::{EventWithMetadata, Metadata};
 use crate::model_key::ModelKey;
-use crate::State;
+use crate::{State, Stream};
 use crate::{Dto, EventSourceError};
 
 #[derive(Clone)]
@@ -134,13 +134,13 @@ where
 
     async fn create_subscription(
         &self,
-        stream_name: &str,
+        stream: &Stream,
         group_name: &str,
     ) -> Result<(), EventSourceError<D::Error>> {
         let created = self
             .event_db()
             .create_persistent_subscription(
-                format!("$ce-{}", stream_name),
+                stream.to_string(),
                 group_name,
                 &Default::default(),
             )
@@ -157,7 +157,7 @@ where
         Ok(())
     }
 
-    async fn get_subscription(&self, stream_name: &str, position: Option<u64>) -> Subscription {
+    async fn get_subscription(&self, stream: Stream, position: Option<u64>) -> Subscription {
         let mut options =
             SubscribeToStreamOptions::default().retry_options(RetryOptions::default());
 
@@ -167,23 +167,23 @@ where
         };
 
         self.event_db()
-            .subscribe_to_stream(stream_name, &options)
+            .subscribe_to_stream(stream.to_string(), &options)
             .await
     }
 
     async fn cache_dto(
         &self,
-        stream_name: &str,
+        stream: &Stream,
         group_name: &str,
     ) -> Result<(), EventSourceError<<D as Dto>::Error>> {
-        self.create_subscription(stream_name, group_name).await?;
+        self.create_subscription(stream, group_name).await?;
 
         let options = SubscribeToPersistentSubscriptionOptions::default().buffer_size(1);
 
         let mut sub = self
             .event_db()
             .subscribe_to_persistent_subscription(
-                format!("$ce-{}", stream_name),
+                stream.to_string(),
                 group_name,
                 &options,
             )
