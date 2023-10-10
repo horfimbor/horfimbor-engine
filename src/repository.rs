@@ -58,6 +58,10 @@ where
 
         self.position = position
     }
+
+    pub fn position(&self) -> Option<u64>{
+        self.position
+    }
 }
 
 #[async_trait]
@@ -192,7 +196,6 @@ where
 
         loop {
             let event = sub.next().await.map_err(EventSourceError::EventStore)?;
-            dbg!(&event);
 
             let original_event = event.get_original_event().data.clone();
 
