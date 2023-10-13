@@ -19,6 +19,37 @@ use std::error::Error;
 use std::fmt::Debug;
 use std::str::Utf8Error;
 use thiserror::Error;
+use uuid::Uuid;
+use crate::model_key::ModelKey;
+
+pub type StreamName = &'static str;
+
+pub enum Stream{
+    Model(ModelKey),
+    Stream(StreamName),
+    Event(EventName),
+    Correlation(Uuid)
+}
+
+impl ToString for Stream{
+    fn to_string(&self) -> String {
+        match self {
+            Stream::Model(m) => {
+                m.format()
+            }
+            Stream::Stream(stream_name) => {
+                let n = stream_name.replace('-', "_");
+                format!("$ce-{}", n)
+            }
+            Stream::Event(e) => {
+                format!("$et-{}", e)
+            }
+            Stream::Correlation(u) => {
+                format!("bc-{}", u)
+            }
+        }
+    }
+}
 
 #[derive(Error, Debug)]
 pub enum EventSourceError<S> {

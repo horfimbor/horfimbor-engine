@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::StreamName;
 
 #[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
 pub struct ModelKey {
@@ -7,7 +8,7 @@ pub struct ModelKey {
 }
 
 impl ModelKey {
-    pub fn new(stream_name: String, stream_id: String) -> Self {
+    pub fn new(stream_name: StreamName, stream_id: String) -> Self {
         // maybe replace with an error ?
         let name = stream_name.replace('-', "_");
         Self {
@@ -41,7 +42,7 @@ mod tests {
     #[test]
     fn test_format() {
         let m = ModelKey::new(
-            "mpzNpYJ".to_string(),
+            "mpzNpYJ",
             "01797a2e-19de-467c-bda2-eddc2a2cbf8c".to_string(),
         );
 
@@ -54,7 +55,7 @@ mod tests {
     #[test]
     fn test_from() {
         let m = ModelKey::new(
-            "mpzNpYJ".to_string(),
+            "mpzNpYJ",
             "01797a2e-19de-467c-bda2-eddc2a2cbf8c".to_string(),
         );
 

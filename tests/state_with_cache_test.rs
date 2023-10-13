@@ -11,6 +11,7 @@ use gyg_eventsource::model_key::ModelKey;
 
 use gyg_eventsource::repository::Repository;
 use gyg_eventsource::repository::StateRepository;
+use gyg_eventsource::Stream;
 
 use crate::state_db::{PokeCommand, PokeState};
 
@@ -20,24 +21,35 @@ mod state_db;
 
 type EasyRedisCache = RedisStateDb<PokeState>;
 
-#[tokio::test]
-async fn with_cache() {
-    let name: String = rand::thread_rng()
+#[macro_use]
+extern crate lazy_static;
+
+
+lazy_static! {
+    static ref NAME: &'static str = {
+        let name: String = rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(7)
         .map(char::from)
         .collect();
+        Box::leak(name.into_boxed_str())
+    };
+}
+
+#[tokio::test]
+async fn with_cache() {
 
     let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
     let event_store = get_event_db();
     let state_repo = StateRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
 
-    let name2 = name.clone();
+    let stream = Stream::Stream(&NAME);
+
     tokio::spawn(async move {
         let state_repo = state_repo.clone();
 
         state_repo
-            .listen(name2.as_str(), name2.as_str())
+            .cache_dto(&stream, &NAME)
             .await
             .unwrap();
     });
@@ -49,7 +61,7 @@ async fn with_cache() {
         EasyRedisCache::new(redis_client.clone()),
     );
 
-    let key = ModelKey::new(name, Uuid::new_v4().to_string());
+    let key = ModelKey::new(&NAME, Uuid::new_v4().to_string());
 
     let model = repo.get_model(&key).await.unwrap();
 

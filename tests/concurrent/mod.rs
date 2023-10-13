@@ -60,7 +60,9 @@ impl State for ConcurrentState {
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
             ConcurrentCommand::TakeTime(time, name) => {
-                let wait = Duration::from_millis((100 * time) as u64);
+                let wait = Duration::from_millis((50 * time) as u64);
+
+                println!("wait : {:?}", wait);
 
                 thread::sleep(wait);
 
