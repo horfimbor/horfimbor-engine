@@ -3,11 +3,7 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use eventstore::{
-    AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
-    ReadStreamOptions, ResolvedEvent, RetryOptions, StreamPosition,
-    SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription,
-};
+use eventstore::{AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision, PersistentSubscriptionOptions, ReadStreamOptions, ResolvedEvent, RetryOptions, StreamPosition, SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -141,12 +137,16 @@ where
         stream: &Stream,
         group_name: &str,
     ) -> Result<(), EventSourceError<D::Error>> {
+
+        let opt = PersistentSubscriptionOptions::default()
+            .resolve_link_tos(true);
+
         let created = self
             .event_db()
             .create_persistent_subscription(
                 stream.to_string(),
                 group_name,
-                &Default::default(),
+                &opt,
             )
             .await;
 
