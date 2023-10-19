@@ -3,15 +3,15 @@ use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use eventstore::{AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision, PersistentSubscriptionOptions, ReadStreamOptions, ResolvedEvent, RetryOptions, StreamPosition, SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription};
+use eventstore::{AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision, PersistentSubscriptionOptions, ReadStreamOptions, RetryOptions, StreamPosition, SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::cache_db::CacheDb;
 use crate::metadata::{EventWithMetadata, Metadata};
 use crate::model_key::ModelKey;
-use crate::{State, Stream};
 use crate::{Dto, EventSourceError};
+use crate::{State, Stream};
 
 #[derive(Clone)]
 pub struct DtoRepository<D, C>
@@ -55,7 +55,7 @@ where
         self.position = position
     }
 
-    pub fn position(&self) -> Option<u64>{
+    pub fn position(&self) -> Option<u64> {
         self.position
     }
 }
@@ -137,17 +137,11 @@ where
         stream: &Stream,
         group_name: &str,
     ) -> Result<(), EventSourceError<D::Error>> {
-
-        let opt = PersistentSubscriptionOptions::default()
-            .resolve_link_tos(true);
+        let opt = PersistentSubscriptionOptions::default().resolve_link_tos(true);
 
         let created = self
             .event_db()
-            .create_persistent_subscription(
-                stream.to_string(),
-                group_name,
-                &opt,
-            )
+            .create_persistent_subscription(stream.to_string(), group_name, &opt)
             .await;
 
         match created {
@@ -186,54 +180,32 @@ where
 
         let mut sub = self
             .event_db()
-            .subscribe_to_persistent_subscription(
-                stream.to_string(),
-                group_name,
-                &options,
-            )
+            .subscribe_to_persistent_subscription(stream.to_string(), group_name, &options)
             .await
             .map_err(EventSourceError::EventStore)?;
 
         loop {
-            let event = sub.next().await.map_err(EventSourceError::EventStore)?;
+            let rcv_event = sub.next().await.map_err(EventSourceError::EventStore)?;
 
-            let original_event = event.get_original_event().data.clone();
+            let event = match rcv_event.event.as_ref(){
+                None => {
+                    continue;
+                }
+                Some(event) => {event}
+            };
 
-            let event_id =
-                std::str::from_utf8(original_event.as_ref()).map_err(EventSourceError::Utf8)?;
 
-            let (index, stream_id) = Self::split_event_id(event_id)?;
+            let metadata: Metadata = serde_json::from_slice(event.custom_metadata.as_ref())
+                .map_err(EventSourceError::Serde)?;
 
-            let pos: u64 = index.parse().map_err(|_e| EventSourceError::Unknown)?;
-
-            let options = ReadStreamOptions::default().position(StreamPosition::Position(pos));
-
-            let mut stream = self
-                .event_db()
-                .read_stream(stream_id, &options)
-                .await
-                .map_err(EventSourceError::EventStore)?;
-
-            let json_event: ResolvedEvent = stream
-                .next()
-                .await
-                .map_err(EventSourceError::EventStore)?
-                .ok_or(EventSourceError::Unknown)?;
-
-            let original_event = json_event.get_original_event();
-
-            let metadata: Metadata =
-                serde_json::from_slice(original_event.custom_metadata.as_ref())
-                    .map_err(EventSourceError::Serde)?;
-
-            let model_key: ModelKey = stream_id.into();
+            let model_key: ModelKey = event.stream_id.as_str().into();
 
             let mut model = self
                 .cache_db()
                 .get(&model_key)
                 .map_err(EventSourceError::CacheDbError)?;
 
-            let ordering = if original_event.revision == 0 {
+            let ordering = if event.revision == 0 {
                 if model.position.is_some() {
                     Ordering::Greater
                 } else {
@@ -242,7 +214,7 @@ where
             } else {
                 match model.position {
                     None => Ordering::Less,
-                    Some(pos) => pos.cmp(&(original_event.revision - 1)),
+                    Some(pos) => pos.cmp(&(event.revision - 1)),
                 }
             };
 
@@ -251,7 +223,7 @@ where
                     model = self.complete_from_es(&model_key, &model).await?;
                     dbg!(format!(
                         "cache have been completed from {:?} to {:?}",
-                        model.position, original_event.revision,
+                        model.position, event.revision,
                     ));
 
                     self.cache_db()
@@ -260,13 +232,13 @@ where
                 }
                 Ordering::Equal => {
                     if metadata.is_event() {
-                        let event = original_event
+                        let dto_event = event
                             .as_json::<D::Event>()
                             .map_err(EventSourceError::Serde)?;
 
-                        model.play_event(&event, Some(original_event.revision));
+                        model.play_event(&dto_event, Some(event.revision));
                     } else {
-                        model.position = Some(original_event.revision);
+                        model.position = Some(event.revision);
                     }
                     self.cache_db()
                         .set(&model_key, model)
@@ -275,12 +247,14 @@ where
                 Ordering::Greater => {
                     dbg!(format!(
                         "cache should be lower than {} but is : {:?}",
-                        original_event.revision, model.position
+                        event.revision, model.position
                     ));
                 }
             }
 
-            sub.ack(event).await.map_err(EventSourceError::EventStore)?;
+            sub.ack(rcv_event)
+                .await
+                .map_err(EventSourceError::EventStore)?;
         }
     }
 

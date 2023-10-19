@@ -11,6 +11,7 @@ const EVENT_PREFIX: &str = "evt";
 
 use crate::cache_db::CacheDbError;
 use crate::metadata::MetadataError;
+use crate::model_key::ModelKey;
 use eventstore::Error as EventStoreError;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -20,23 +21,20 @@ use std::fmt::Debug;
 use std::str::Utf8Error;
 use thiserror::Error;
 use uuid::Uuid;
-use crate::model_key::ModelKey;
 
 pub type StreamName = &'static str;
 
-pub enum Stream{
+pub enum Stream {
     Model(ModelKey),
     Stream(StreamName),
     Event(EventName),
-    Correlation(Uuid)
+    Correlation(Uuid),
 }
 
-impl ToString for Stream{
+impl ToString for Stream {
     fn to_string(&self) -> String {
         match self {
-            Stream::Model(m) => {
-                m.format()
-            }
+            Stream::Model(m) => m.format(),
             Stream::Stream(stream_name) => {
                 let n = stream_name.replace('-', "_");
                 format!("$ce-{}", n)
