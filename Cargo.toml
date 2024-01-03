@@ -1,5 +1,5 @@
 [package]
-name = "gyg-eventsource"
+name = "chrono-craft-engine"
 version = "0.0.1"
 edition = "2021"
 description = "an eventsource implementation on top of eventstore"
