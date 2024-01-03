@@ -24,21 +24,19 @@ type EasyRedisCache = RedisStateDb<PokeState>;
 #[macro_use]
 extern crate lazy_static;
 
-
 lazy_static! {
     static ref NAME: &'static str = {
         let name: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(7)
-        .map(char::from)
-        .collect();
+            .sample_iter(&Alphanumeric)
+            .take(7)
+            .map(char::from)
+            .collect();
         Box::leak(name.into_boxed_str())
     };
 }
 
 #[tokio::test]
 async fn with_cache() {
-
     let redis_client = redis::Client::open("redis://localhost:6379/").unwrap();
     let event_store = get_event_db();
     let state_repo = StateRepository::new(event_store, EasyRedisCache::new(redis_client.clone()));
@@ -48,10 +46,7 @@ async fn with_cache() {
     tokio::spawn(async move {
         let state_repo = state_repo.clone();
 
-        state_repo
-            .cache_dto(&stream, &NAME)
-            .await
-            .unwrap();
+        state_repo.cache_dto(&stream, &NAME).await.unwrap();
     });
 
     let event_store = get_event_db();
