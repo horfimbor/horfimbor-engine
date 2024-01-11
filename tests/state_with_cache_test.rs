@@ -1,5 +1,5 @@
 use eventstore::{Client as EventClient, Client};
-use gyg_eventsource::cache_db::redis::RedisStateDb;
+use chrono_craft_engine::cache_db::redis::RedisStateDb;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use redis::Commands;
@@ -7,11 +7,11 @@ use std::time::Duration;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use gyg_eventsource::model_key::ModelKey;
+use chrono_craft_engine::model_key::ModelKey;
 
-use gyg_eventsource::repository::Repository;
-use gyg_eventsource::repository::StateRepository;
-use gyg_eventsource::Stream;
+use chrono_craft_engine::repository::Repository;
+use chrono_craft_engine::repository::StateRepository;
+use chrono_craft_engine::Stream;
 
 use crate::state_db::{PokeCommand, PokeState};
 

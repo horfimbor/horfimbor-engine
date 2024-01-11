@@ -1,4 +1,4 @@
-use gyg_eventsource::{Command, Dto, Event, State};
+use chrono_craft_engine::{Command, Dto, Event, State};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

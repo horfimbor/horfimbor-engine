@@ -104,8 +104,8 @@ pub trait State: Dto {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gyg_eventsource_derive::Command;
-    use gyg_eventsource_derive::Event;
+    use chrono_craft_engine_derive::Command;
+    use chrono_craft_engine_derive::Event;
     use serde::Deserialize;
 
     #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
