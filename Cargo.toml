@@ -1,5 +1,5 @@
 [package]
-name = "gyg-eventsource"
+name = "chrono-craft-engine"
 version = "0.0.1"
 edition = "2021"
 description = "an eventsource implementation on top of eventstore"
@@ -17,8 +17,9 @@ serde_json = "1.0"
 uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = "1.26"
 thiserror = "1.0"
-gyg-eventsource-derive = { version = "0.1.0", path = "gyg-eventsource-derive" }
+chrono-craft-engine-derive = { version = "0.1.0", path = "chrono-craft-engine-derive" }
 redis= { version = "0.24", features = ["tokio-rustls-comp"], optional = true }
+chrono = "0.4.31"
 
 [features]
 cache-redis=["redis"]

@@ -4,13 +4,13 @@ use std::time::Duration;
 use eventstore::{Client as EventClient, Client};
 use futures::executor::block_on;
 
-use gyg_eventsource::cache_db::NoCache;
+use chrono_craft_engine::cache_db::NoCache;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use gyg_eventsource::model_key::ModelKey;
-use gyg_eventsource::repository::Repository;
-use gyg_eventsource::repository::{DtoRepository, StateRepository};
+use chrono_craft_engine::model_key::ModelKey;
+use chrono_craft_engine::repository::Repository;
+use chrono_craft_engine::repository::{DtoRepository, StateRepository};
 
 use crate::concurrent::{ConcurrentCommand, ConcurrentState};
 use crate::simple::{SimpleCommand, SimpleNbAddDto, SimpleState};
