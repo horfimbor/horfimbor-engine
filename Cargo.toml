@@ -3,7 +3,7 @@ name = "gyg-eventsource"
 version = "0.0.1"
 edition = "2021"
 description = "an eventsource implementation on top of eventstore"
-repository = "https://github.com/galakhygame/gyg-eventsource"
+repository = "https://github.com/ChronoCraftEngine/chrono-craft-engine"
 license-file = "LICENSE"
 keywords = ["eventsource", "eventsourcing", "eventstore"]
 categories = ["database"]
@@ -18,7 +18,7 @@ uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = "1.26"
 thiserror = "1.0"
 gyg-eventsource-derive = { version = "0.1.0", path = "gyg-eventsource-derive" }
-redis= { version = "0.24", features = ["tokio-native-tls-comp"], optional = true }
+redis= { version = "0.24", features = ["tokio-rustls-comp"], optional = true }
 
 [features]
 cache-redis=["redis"]

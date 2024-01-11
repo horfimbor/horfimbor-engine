@@ -116,7 +116,7 @@ impl EventWithMetadata {
             Some(previous) => Metadata {
                 id: Some(id),
                 correlation_id: previous.correlation_id,
-                causation_id: previous.id.unwrap_or_else(|| id),
+                causation_id: previous.id.unwrap_or(id),
                 is_event,
             },
         };
