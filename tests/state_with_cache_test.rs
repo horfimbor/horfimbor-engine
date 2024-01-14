@@ -1,14 +1,17 @@
+#[macro_use]
+extern crate lazy_static;
+
+use std::time::Duration;
+
 use eventstore::{Client as EventClient, Client};
-use chrono_craft_engine::cache_db::redis::RedisStateDb;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use redis::Commands;
-use std::time::Duration;
 use tokio::time::sleep;
 use uuid::Uuid;
 
+use chrono_craft_engine::cache_db::redis::RedisStateDb;
 use chrono_craft_engine::model_key::ModelKey;
-
 use chrono_craft_engine::repository::Repository;
 use chrono_craft_engine::repository::StateRepository;
 use chrono_craft_engine::Stream;
@@ -20,9 +23,6 @@ mod simple;
 mod state_db;
 
 type EasyRedisCache = RedisStateDb<PokeState>;
-
-#[macro_use]
-extern crate lazy_static;
 
 lazy_static! {
     static ref NAME: &'static str = {

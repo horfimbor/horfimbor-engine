@@ -73,11 +73,8 @@ impl EventWithMetadata {
     where
         C: Command,
     {
-        let event_data = EventData::json(
-            command.command_name(),
-            command,
-        )
-        .map_err(MetadataError::SerdeError)?;
+        let event_data =
+            EventData::json(command.command_name(), command).map_err(MetadataError::SerdeError)?;
 
         Ok(Self::from_event_data(event_data, previous_metadata, false))
     }
@@ -86,7 +83,8 @@ impl EventWithMetadata {
     where
         E: Event,
     {
-        let event_data = EventData::json(event.event_name(), event).map_err(MetadataError::SerdeError)?;
+        let event_data =
+            EventData::json(event.event_name(), event).map_err(MetadataError::SerdeError)?;
 
         Ok(Self::from_event_data(
             event_data,

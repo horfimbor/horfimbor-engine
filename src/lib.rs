@@ -1,23 +1,24 @@
+use std::error::Error;
+use std::fmt::Debug;
+use std::str::Utf8Error;
+
 /// re-export import :
 pub use chrono_craft_engine_derive;
+use eventstore::Error as EventStoreError;
+use serde::de::DeserializeOwned;
+use serde::Serialize;
+use serde_json::Error as SerdeError;
+use thiserror::Error;
+use uuid::Uuid;
+
+use crate::cache_db::CacheDbError;
+use crate::metadata::MetadataError;
+use crate::model_key::ModelKey;
 
 pub mod cache_db;
 pub mod metadata;
 pub mod model_key;
 pub mod repository;
-
-use crate::cache_db::CacheDbError;
-use crate::metadata::MetadataError;
-use crate::model_key::ModelKey;
-use eventstore::Error as EventStoreError;
-use serde::de::DeserializeOwned;
-use serde::Serialize;
-use serde_json::Error as SerdeError;
-use std::error::Error;
-use std::fmt::Debug;
-use std::str::Utf8Error;
-use thiserror::Error;
-use uuid::Uuid;
 
 pub type StreamName = &'static str;
 
@@ -74,7 +75,7 @@ pub enum EventSourceError<S> {
 }
 
 pub type CommandName = String;
-pub type EventName = &'static str;
+pub type EventName = String;
 pub type StateName = &'static str;
 
 pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
@@ -92,7 +93,7 @@ pub trait Dto: Default + Serialize + DeserializeOwned + Debug + Send + Clone + S
     fn play_event(&mut self, event: &Self::Event);
 }
 
-pub trait StateNamed{
+pub trait StateNamed {
     fn state_name() -> StateName;
 }
 
@@ -104,20 +105,13 @@ pub trait State: Dto + StateNamed {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use chrono_craft_engine_derive::Command;
-    use chrono_craft_engine_derive::Event;
+    use chrono_craft_engine_derive::{Command, Event, StateNamed};
     use serde::Deserialize;
 
-    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-    pub struct TestState {
-    }
+    use super::*;
 
-    impl StateNamed for TestState{
-        fn state_name() -> StateName {
-            "testedStated"
-        }
-    }
+    #[derive(Clone, Debug, Default, Serialize, Deserialize, StateNamed)]
+    pub struct TestState {}
 
     #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
     #[state(TestState)]
@@ -135,12 +129,12 @@ mod tests {
             a: "ok".to_string(),
         };
 
-        assert_eq!(cmd_add.command_name(), "testedStated.CMD.Add");
-        assert_eq!(cmd_reset.command_name(), "testedStated.CMD.Reset");
-        assert_eq!(cmd_other.command_name(), "testedStated.CMD.SomeOtherVariant");
+        assert_eq!(cmd_add.command_name(), "TestState.CMD.Add");
+        assert_eq!(cmd_reset.command_name(), "TestState.CMD.Reset");
+        assert_eq!(cmd_other.command_name(), "TestState.CMD.SomeOtherVariant");
 
-        assert_eq!(cmd_add.event_name(), "evt.add");
-        assert_eq!(cmd_reset.event_name(), "evt.reset");
-        assert_eq!(cmd_other.event_name(), "evt.some_other_variant");
+        assert_eq!(cmd_add.event_name(), "TestState.evt.add");
+        assert_eq!(cmd_reset.event_name(), "TestState.evt.reset");
+        assert_eq!(cmd_other.event_name(), "TestState.evt.some_other_variant");
     }
 }

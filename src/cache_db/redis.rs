@@ -1,8 +1,10 @@
+use std::marker::PhantomData;
+
+use redis::{Client, Commands};
+
 use crate::cache_db::{CacheDb, CacheDbError};
 use crate::model_key::ModelKey;
 use crate::Dto;
-use redis::{Client, Commands};
-use std::marker::PhantomData;
 
 #[derive(Clone)]
 pub struct RedisStateDb<S> {

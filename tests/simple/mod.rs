@@ -1,8 +1,10 @@
-use chrono_craft_engine_derive::{Command, Event};
-use chrono_craft_engine::{Command, Dto, Event, State};
+use chrono_craft_engine_derive::{Command, Event, StateNamed};
 use serde::{Deserialize, Serialize};
-use chrono_craft_engine::{CommandName, EventName};
 use thiserror::Error;
+
+use chrono_craft_engine::{
+    Command, CommandName, Dto, Event, EventName, State, StateName, StateNamed,
+};
 
 #[derive(Deserialize, Serialize, Clone, Debug, Command)]
 #[state(SimpleState)]
@@ -12,7 +14,6 @@ pub enum SimpleCommand {
     Set(u32),
 }
 
-
 #[derive(Error, Debug)]
 pub enum SimpleError {
     #[error("the simple error is `{0}`")]
@@ -20,12 +21,13 @@ pub enum SimpleError {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Event)]
+#[state(SimpleState)]
 pub enum SimpleEvent {
     Added(u32),
     Removed(u32),
 }
 
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, StateNamed)]
 pub struct SimpleState {
     pub nb: u32,
 }

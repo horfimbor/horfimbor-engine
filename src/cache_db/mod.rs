@@ -1,11 +1,13 @@
-#[cfg(feature = "cache-redis")]
-pub mod redis;
+use std::marker::PhantomData;
+
+use thiserror::Error;
 
 use crate::model_key::ModelKey;
 use crate::repository::ModelWithPosition;
 use crate::Dto;
-use std::marker::PhantomData;
-use thiserror::Error;
+
+#[cfg(feature = "cache-redis")]
+pub mod redis;
 
 pub trait CacheDb<S>: Clone + Send + Sync
 where

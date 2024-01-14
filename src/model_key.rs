@@ -1,5 +1,6 @@
-use crate::StreamName;
 use serde::{Deserialize, Serialize};
+
+use crate::StreamName;
 
 #[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
 pub struct ModelKey {
