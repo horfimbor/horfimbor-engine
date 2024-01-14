@@ -7,13 +7,14 @@ use futures::executor::block_on;
 use chrono_craft_engine::cache_db::NoCache;
 use tokio::time::sleep;
 use uuid::Uuid;
+use chrono_craft_engine::{Command, Event};
 
 use chrono_craft_engine::model_key::ModelKey;
 use chrono_craft_engine::repository::Repository;
 use chrono_craft_engine::repository::{DtoRepository, StateRepository};
 
 use crate::concurrent::{ConcurrentCommand, ConcurrentState};
-use crate::simple::{SimpleCommand, SimpleNbAddDto, SimpleState};
+use crate::simple::{SimpleCommand, SimpleEvent, SimpleNbAddDto, SimpleState};
 
 mod concurrent;
 mod simple;

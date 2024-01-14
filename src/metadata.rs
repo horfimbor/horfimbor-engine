@@ -4,7 +4,7 @@ use serde_json::Error as SerdeError;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::{Command, Event, COMMAND_PREFIX, EVENT_PREFIX};
+use crate::{Command, Event};
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Metadata {
@@ -74,7 +74,7 @@ impl EventWithMetadata {
         C: Command,
     {
         let event_data = EventData::json(
-            format!("{}.{}", COMMAND_PREFIX, command.command_name()),
+            command.command_name(),
             command,
         )
         .map_err(MetadataError::SerdeError)?;
@@ -86,9 +86,7 @@ impl EventWithMetadata {
     where
         E: Event,
     {
-        let key = format!("{}.{}", EVENT_PREFIX, event.event_name());
-
-        let event_data = EventData::json(key, event).map_err(MetadataError::SerdeError)?;
+        let event_data = EventData::json(event.event_name(), event).map_err(MetadataError::SerdeError)?;
 
         Ok(Self::from_event_data(
             event_data,

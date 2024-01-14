@@ -6,9 +6,6 @@ pub mod metadata;
 pub mod model_key;
 pub mod repository;
 
-const COMMAND_PREFIX: &str = "CMD";
-const EVENT_PREFIX: &str = "evt";
-
 use crate::cache_db::CacheDbError;
 use crate::metadata::MetadataError;
 use crate::model_key::ModelKey;
@@ -76,7 +73,7 @@ pub enum EventSourceError<S> {
     Unknown,
 }
 
-pub type CommandName = &'static str;
+pub type CommandName = String;
 pub type EventName = &'static str;
 pub type StateName = &'static str;
 
@@ -95,7 +92,11 @@ pub trait Dto: Default + Serialize + DeserializeOwned + Debug + Send + Clone + S
     fn play_event(&mut self, event: &Self::Event);
 }
 
-pub trait State: Dto {
+pub trait StateNamed{
+    fn state_name() -> StateName;
+}
+
+pub trait State: Dto + StateNamed {
     type Command: Command + Sync + Send;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
@@ -108,7 +109,18 @@ mod tests {
     use chrono_craft_engine_derive::Event;
     use serde::Deserialize;
 
+    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+    pub struct TestState {
+    }
+
+    impl StateNamed for TestState{
+        fn state_name() -> StateName {
+            "testedStated"
+        }
+    }
+
     #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
+    #[state(TestState)]
     pub enum ToTest {
         Add(usize),
         Reset,
@@ -123,12 +135,12 @@ mod tests {
             a: "ok".to_string(),
         };
 
-        assert_eq!(cmd_add.command_name(), "Add");
-        assert_eq!(cmd_reset.command_name(), "Reset");
-        assert_eq!(cmd_other.command_name(), "SomeOtherVariant");
+        assert_eq!(cmd_add.command_name(), "testedStated.CMD.Add");
+        assert_eq!(cmd_reset.command_name(), "testedStated.CMD.Reset");
+        assert_eq!(cmd_other.command_name(), "testedStated.CMD.SomeOtherVariant");
 
-        assert_eq!(cmd_add.event_name(), "add");
-        assert_eq!(cmd_reset.event_name(), "reset");
-        assert_eq!(cmd_other.event_name(), "some_other_variant");
+        assert_eq!(cmd_add.event_name(), "evt.add");
+        assert_eq!(cmd_reset.event_name(), "evt.reset");
+        assert_eq!(cmd_other.event_name(), "evt.some_other_variant");
     }
 }

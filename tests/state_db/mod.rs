@@ -1,18 +1,12 @@
+use chrono_craft_engine_derive::{Command, Event};
 use chrono_craft_engine::{Command, Dto, Event, State};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use chrono_craft_engine::{CommandName, EventName};
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Command)]
 pub enum PokeCommand {
     Poke(u32),
-}
-
-impl Command for PokeCommand {
-    fn command_name(&self) -> &'static str {
-        match &self {
-            PokeCommand::Poke(_) => "Poke",
-        }
-    }
 }
 
 #[derive(Error, Debug)]
@@ -21,17 +15,9 @@ pub enum PokeError {
     Info(String),
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Event)]
 pub enum PokeEvent {
     Poked(u32),
-}
-
-impl Event for PokeEvent {
-    fn event_name(&self) -> &'static str {
-        match &self {
-            PokeEvent::Poked(_) => "poked",
-        }
-    }
 }
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]

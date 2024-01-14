@@ -1,23 +1,17 @@
+use chrono_craft_engine_derive::{Command, Event};
 use chrono_craft_engine::{Command, Dto, Event, State};
 use serde::{Deserialize, Serialize};
+use chrono_craft_engine::{CommandName, EventName};
 use thiserror::Error;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Command)]
+#[state(SimpleState)]
 pub enum SimpleCommand {
     Add(u32),
     Remove(u32),
     Set(u32),
 }
 
-impl Command for SimpleCommand {
-    fn command_name(&self) -> &'static str {
-        match &self {
-            SimpleCommand::Add(_) => "Add",
-            SimpleCommand::Remove(_) => "Remove",
-            SimpleCommand::Set(_) => "Set",
-        }
-    }
-}
 
 #[derive(Error, Debug)]
 pub enum SimpleError {
@@ -25,19 +19,10 @@ pub enum SimpleError {
     Info(String),
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Event)]
 pub enum SimpleEvent {
     Added(u32),
     Removed(u32),
-}
-
-impl Event for SimpleEvent {
-    fn event_name(&self) -> &'static str {
-        match &self {
-            SimpleEvent::Added(_) => "added",
-            SimpleEvent::Removed(_) => "removed",
-        }
-    }
 }
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]
