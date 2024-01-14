@@ -1,9 +1,13 @@
-use async_trait::async_trait;
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
-use eventstore::{AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision, PersistentSubscriptionOptions, ReadStreamOptions, RetryOptions, StreamPosition, SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription};
+use async_trait::async_trait;
+use eventstore::{
+    AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
+    PersistentSubscriptionOptions, ReadStreamOptions, RetryOptions, StreamPosition,
+    SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription,
+};
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
@@ -187,13 +191,12 @@ where
         loop {
             let rcv_event = sub.next().await.map_err(EventSourceError::EventStore)?;
 
-            let event = match rcv_event.event.as_ref(){
+            let event = match rcv_event.event.as_ref() {
                 None => {
                     continue;
                 }
-                Some(event) => {event}
+                Some(event) => event,
             };
-
 
             let metadata: Metadata = serde_json::from_slice(event.custom_metadata.as_ref())
                 .map_err(EventSourceError::Serde)?;

@@ -1,18 +1,13 @@
-use chrono_craft_engine::{Command, Dto, Event, State};
+use chrono_craft_engine_derive::{Command, Event, StateNamed};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+use chrono_craft_engine::*;
+
+#[derive(Deserialize, Serialize, Clone, Debug, Command)]
+#[state(PokeState)]
 pub enum PokeCommand {
     Poke(u32),
-}
-
-impl Command for PokeCommand {
-    fn command_name(&self) -> &'static str {
-        match &self {
-            PokeCommand::Poke(_) => "Poke",
-        }
-    }
 }
 
 #[derive(Error, Debug)]
@@ -21,20 +16,13 @@ pub enum PokeError {
     Info(String),
 }
 
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Event)]
+#[state(PokeState)]
 pub enum PokeEvent {
     Poked(u32),
 }
 
-impl Event for PokeEvent {
-    fn event_name(&self) -> &'static str {
-        match &self {
-            PokeEvent::Poked(_) => "poked",
-        }
-    }
-}
-
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, StateNamed)]
 pub struct PokeState {
     pub nb: u32,
 }

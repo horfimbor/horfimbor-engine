@@ -1,9 +1,10 @@
 use proc_macro::{self, TokenStream};
-use proc_macro2::{Span, TokenStream as TokenStream2};
-use quote::{ quote, quote_spanned};
-use syn::spanned::Spanned;
-use syn::{parse_macro_input, Data, DeriveInput, Error, Fields};
+
 use convert_case::{Case, Casing};
+use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
+use quote::{quote, quote_spanned};
+use syn::{Data, DeriveInput, Error, Fields, parse_macro_input};
+use syn::spanned::Spanned;
 
 macro_rules! derive_error {
     ($string: tt) => {
@@ -13,10 +14,15 @@ macro_rules! derive_error {
     };
 }
 
-#[proc_macro_derive(Command)]
+#[proc_macro_derive(Command, attributes(state))]
 pub fn derive_command(input: TokenStream) -> TokenStream {
 
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
+
+    let state_name = match get_state_name(&input) {
+        Ok(value) => value,
+        Err(value) => return value,
+    };
 
     // get enum name
     let name = &input.ident;
@@ -49,9 +55,9 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
 
 
                 // Here we construct the function for the current variant
-                let result = variant_name.to_string();
+                let result = format!("CMD.{}", variant_name.to_string());
                 fn_core.extend(quote! {
-                    #name::#variant_name #fields_in_variant => #result,
+                    #name::#variant_name #fields_in_variant => format!( "{}.{}",state_name,#result),
                 });
             }
         }
@@ -60,20 +66,27 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
 
     let output = quote! {
         impl Command for #name {
-                fn command_name(&self) -> CommandName {
-                    match self {
-                        #fn_core
-                    }
+            fn command_name(&self) -> CommandName {
+                let state_name = #state_name::state_name();
+                match self {
+                    #fn_core
                 }
+            }
         }
     };
     output.into()
 }
 
-#[proc_macro_derive(Event)]
+#[proc_macro_derive(Event, attributes(state))]
 pub fn derive_event(input: TokenStream) -> TokenStream {
 
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
+
+
+    let state_name = match get_state_name(&input) {
+        Ok(value) => value,
+        Err(value) => return value,
+    };
 
     // get enum name
     let name = &input.ident;
@@ -106,9 +119,9 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
 
 
                 // Here we construct the function for the current variant
-                let result = variant_name.to_string().to_case(Case::Snake);
+                let result = format!("evt.{}",variant_name.to_string().to_case(Case::Snake));
                 fn_core.extend(quote! {
-                    #name::#variant_name #fields_in_variant => #result,
+                    #name::#variant_name #fields_in_variant => format!( "{}.{}",state_name,#result),
                 });
             }
         }
@@ -117,12 +130,50 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
 
     let output = quote! {
         impl Event for #name {
-                fn event_name(&self) -> EventName {
-                    match self {
-                        #fn_core
-                    }
+            fn event_name(&self) -> EventName {
+                let state_name = #state_name::state_name();
+                match self {
+                    #fn_core
                 }
+            }
         }
     };
     output.into()
+}
+
+
+#[proc_macro_derive(StateNamed)]
+pub fn derive_state(input: TokenStream) -> TokenStream {
+
+    let input: DeriveInput = parse_macro_input!(input as DeriveInput);
+
+    // println!("{:#?}", input);
+
+    let name = &input.ident;
+    let output = format!("{}",&input.ident);
+
+    let output = quote! {
+        impl StateNamed for #name {
+            fn state_name() -> StateName {
+                #output
+            }
+        }
+    };
+    output.into()
+}
+
+fn get_state_name(input: &DeriveInput) -> Result<Ident, TokenStream> {
+    let attrs = &input.attrs;
+
+    let state = attrs.iter().find(|attr|
+        attr.path().is_ident("state")
+    );
+
+    let state = match state {
+        Some(s) => s,
+        None => { return Err(derive_error!("attribute 'state' is mandatory")); }
+    };
+
+    let state_name: syn::Ident = state.parse_args().expect("cannot parse attribute state");
+    Ok(state_name)
 }

@@ -1,42 +1,32 @@
 use std::thread;
 
-use chrono_craft_engine::{Command, Dto, Event, State};
+use chrono_craft_engine_derive::{Command, Event, StateNamed};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::Duration;
 
+use chrono_craft_engine::{
+    Command, CommandName, Dto, Event, EventName, State, StateName, StateNamed,
+};
+
 use crate::concurrent::ConcurrentEvent::TimeTaken;
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Command)]
+#[state(ConcurrentState)]
 pub enum ConcurrentCommand {
     TakeTime(u8, String),
 }
 
-impl Command for ConcurrentCommand {
-    fn command_name(&self) -> &'static str {
-        match &self {
-            ConcurrentCommand::TakeTime(_, _) => "take_time",
-        }
-    }
-}
-
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Deserialize, Serialize, Debug, Clone, Event)]
+#[state(ConcurrentState)]
 pub enum ConcurrentEvent {
     TimeTaken(String),
-}
-
-impl Event for ConcurrentEvent {
-    fn event_name(&self) -> &'static str {
-        match &self {
-            TimeTaken(_) => "time_taken",
-        }
-    }
 }
 
 #[derive(Error, Debug)]
 pub enum ConcurrentError {}
 
-#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone)]
+#[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, StateNamed)]
 pub struct ConcurrentState {
     pub names: Vec<String>,
 }
