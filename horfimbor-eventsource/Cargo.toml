@@ -6,7 +6,6 @@ description = "an eventsource implementation on top of eventstore"
 repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"
 keywords = ["eventsource", "eventsourcing", "eventstore"]
-categories = ["database"]
 
 [dependencies]
 async-trait = "0.1"
