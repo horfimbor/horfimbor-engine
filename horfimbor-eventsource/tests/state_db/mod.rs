@@ -1,8 +1,8 @@
-use horfimbor_engine_derive::{Command, Event, StateNamed};
+use horfimbor_eventsource_derive::{Command, Event, StateNamed};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use horfimbor_engine::*;
+use horfimbor_eventsource::*;
 
 #[derive(Deserialize, Serialize, Clone, Debug, Command)]
 #[state(PokeState)]

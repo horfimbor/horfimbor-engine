@@ -1,11 +1,11 @@
 use std::thread;
 
-use horfimbor_engine_derive::{Command, Event, StateNamed};
+use horfimbor_eventsource_derive::{Command, Event, StateNamed};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use tokio::time::Duration;
 
-use horfimbor_engine::{
+use horfimbor_eventsource::{
     Command, CommandName, Dto, Event, EventName, State, StateName, StateNamed,
 };
 
