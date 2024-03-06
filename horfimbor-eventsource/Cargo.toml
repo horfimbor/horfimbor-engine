@@ -1,6 +1,6 @@
 [package]
 name = "horfimbor-eventsource"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "an eventsource implementation on top of eventstore"
 repository = "https://github.com/horfimbor/horfimbor-engine"
@@ -16,7 +16,7 @@ serde_json = "1.0"
 uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = "1.26"
 thiserror = "1.0"
-horfimbor-eventsource-derive = { version = "0.1.1", path = "../horfimbor-eventsource-derive" }
+horfimbor-eventsource-derive = { version = "0.1.2", path = "../horfimbor-eventsource-derive" }
 redis= { version = "0.24", features = ["tokio-rustls-comp"], optional = true }
 chrono = "0.4"
 
