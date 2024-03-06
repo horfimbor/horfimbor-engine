@@ -55,7 +55,7 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
 
 
                 // Here we construct the function for the current variant
-                let result = format!("CMD.{}", variant_name.to_string());
+                let result = format!("CMD.{}", variant_name);
                 fn_core.extend(quote! {
                     #name::#variant_name #fields_in_variant => format!( "{}.{}",state_name,#result),
                 });

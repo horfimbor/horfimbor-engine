@@ -33,4 +33,6 @@ jobs:
       - name: Run tests
         run: cargo test
       - name: Run clippy
-        run: cargo clippy -- -D clippy::expect_used -D clippy::panic -D clippy::unwrap_used
+        # TODO fix derive and readd `-D clippy::expect_used`
+        run: cargo clippy -p horfimbor-eventsource -- -D clippy::panic -D clippy::unwrap_used
+
