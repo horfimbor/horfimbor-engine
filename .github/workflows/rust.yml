@@ -35,4 +35,3 @@ jobs:
       - name: Run clippy
         # TODO fix derive and readd `-D clippy::expect_used`
         run: cargo clippy -p horfimbor-eventsource -- -D clippy::panic -D clippy::unwrap_used
-
