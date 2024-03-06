@@ -2,7 +2,7 @@
 name = "horfimbor-eventsource-derive"
 version = "0.1.0"
 edition = "2021"
-description = "derive macro for horfimbor-engine"
+description = "derive macro for horfimbor-eventsource"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

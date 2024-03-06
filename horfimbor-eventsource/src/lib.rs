@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::str::Utf8Error;
 
 /// re-export import :
-pub use horfimbor_engine_derive;
+pub use horfimbor_eventsource_derive;
 use eventstore::Error as EventStoreError;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
@@ -105,7 +105,7 @@ pub trait State: Dto + StateNamed {
 
 #[cfg(test)]
 mod tests {
-    use horfimbor_engine_derive::{Command, Event, StateNamed};
+    use horfimbor_eventsource_derive::{Command, Event, StateNamed};
     use serde::Deserialize;
 
     use super::*;

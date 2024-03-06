@@ -10,11 +10,11 @@ use redis::Commands;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use horfimbor_engine::cache_db::redis::RedisStateDb;
-use horfimbor_engine::model_key::ModelKey;
-use horfimbor_engine::repository::Repository;
-use horfimbor_engine::repository::StateRepository;
-use horfimbor_engine::Stream;
+use horfimbor_eventsource::cache_db::redis::RedisStateDb;
+use horfimbor_eventsource::model_key::ModelKey;
+use horfimbor_eventsource::repository::Repository;
+use horfimbor_eventsource::repository::StateRepository;
+use horfimbor_eventsource::Stream;
 
 use crate::state_db::{PokeCommand, PokeState};
 
