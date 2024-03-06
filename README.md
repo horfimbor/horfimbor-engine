@@ -1,5 +1,10 @@
-[![Rust](https://github.com/ChronoCraftEngine/chrono-craft-engine/actions/workflows/rust.yml/badge.svg)](https://github.com/ChronoCraftEngine/chrono-craft-engine/actions/workflows/rust.yml)
+[![Rust](https://github.com/horfimbor/horfimbor-engine/actions/workflows/rust.yml/badge.svg)](https://github.com/horfimbor/horfimbor-engine/actions/workflows/rust.yml)
 
-# chrono-craft-engine
-eventsource implementation on top of eventstore
+# Horfimbor engine
 
+a small eventsource implementation on top of [eventstore](https://www.eventstore.com/)
+
+
+## Development 
+
+please use [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/)

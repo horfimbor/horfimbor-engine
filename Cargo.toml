@@ -1,23 +1,23 @@
 [package]
-name = "chrono-craft-engine"
+name = "horfimbor-engine"
 version = "0.1.0"
 edition = "2021"
 description = "an eventsource implementation on top of eventstore"
-repository = "https://github.com/ChronoCraftEngine/chrono-craft-engine"
+repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"
 keywords = ["eventsource", "eventsourcing", "eventstore"]
 categories = ["database"]
 
 [dependencies]
 async-trait = "0.1"
-eventstore = "2.2"
+eventstore = "3.0.0"
 futures = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = "1.26"
 thiserror = "1.0"
-chrono-craft-engine-derive = { version = "0.1.0", path = "chrono-craft-engine-derive" }
+horfimbor-engine-derive = { version = "0.1.0", path = "horfimbor-engine-derive" }
 redis= { version = "0.24", features = ["tokio-rustls-comp"], optional = true }
 chrono = "0.4"
 
