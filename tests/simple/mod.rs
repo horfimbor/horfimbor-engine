@@ -1,8 +1,8 @@
-use chrono_craft_engine_derive::{Command, Event, StateNamed};
+use horfimbor_engine_derive::{Command, Event, StateNamed};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use chrono_craft_engine::{
+use horfimbor_engine::{
     Command, CommandName, Dto, Event, EventName, State, StateName, StateNamed,
 };
 
