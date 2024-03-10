@@ -4,8 +4,10 @@ use thiserror::Error;
 
 use horfimbor_eventsource::*;
 
+const POKE_STATE_NAME: StateName = "POKE_STATE_NAME";
+
 #[derive(Deserialize, Serialize, Clone, Debug, Command)]
-#[state(PokeState)]
+#[state(POKE_STATE_NAME)]
 pub enum PokeCommand {
     Poke(u32),
 }
@@ -17,12 +19,13 @@ pub enum PokeError {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Event)]
-#[state(PokeState)]
+#[state(POKE_STATE_NAME)]
 pub enum PokeEvent {
     Poked(u32),
 }
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, StateNamed)]
+#[state(POKE_STATE_NAME)]
 pub struct PokeState {
     pub nb: u32,
 }

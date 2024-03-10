@@ -2,9 +2,9 @@ use std::error::Error;
 use std::fmt::Debug;
 use std::str::Utf8Error;
 
+use eventstore::Error as EventStoreError;
 /// re-export import :
 pub use horfimbor_eventsource_derive;
-use eventstore::Error as EventStoreError;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Error as SerdeError;
@@ -74,8 +74,8 @@ pub enum EventSourceError<S> {
     Unknown,
 }
 
-pub type CommandName = String;
-pub type EventName = String;
+pub type CommandName = &'static str;
+pub type EventName = &'static str;
 pub type StateName = &'static str;
 
 pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
@@ -110,11 +110,14 @@ mod tests {
 
     use super::*;
 
+    const STATE_NAME: StateName = "STATE_NAME";
+
     #[derive(Clone, Debug, Default, Serialize, Deserialize, StateNamed)]
+    #[state(STATE_NAME)]
     pub struct TestState {}
 
     #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
-    #[state(TestState)]
+    #[state(STATE_NAME)]
     pub enum ToTest {
         Add(usize),
         Reset,

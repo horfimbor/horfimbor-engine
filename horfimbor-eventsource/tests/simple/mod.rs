@@ -6,8 +6,10 @@ use horfimbor_eventsource::{
     Command, CommandName, Dto, Event, EventName, State, StateName, StateNamed,
 };
 
+const SIMPLE_STATE_NAME: StateName = "SIMPLE_STATE_NAME";
+
 #[derive(Deserialize, Serialize, Clone, Debug, Command)]
-#[state(SimpleState)]
+#[state(SIMPLE_STATE_NAME)]
 pub enum SimpleCommand {
     Add(u32),
     Remove(u32),
@@ -21,13 +23,14 @@ pub enum SimpleError {
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Event)]
-#[state(SimpleState)]
+#[state(SIMPLE_STATE_NAME)]
 pub enum SimpleEvent {
     Added(u32),
     Removed(u32),
 }
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, StateNamed)]
+#[state(SIMPLE_STATE_NAME)]
 pub struct SimpleState {
     pub nb: u32,
 }
