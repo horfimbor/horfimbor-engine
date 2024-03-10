@@ -132,12 +132,12 @@ mod tests {
             a: "ok".to_string(),
         };
 
-        assert_eq!(cmd_add.command_name(), "TestState.CMD.Add");
-        assert_eq!(cmd_reset.command_name(), "TestState.CMD.Reset");
-        assert_eq!(cmd_other.command_name(), "TestState.CMD.SomeOtherVariant");
+        assert_eq!(cmd_add.command_name(), "STATE_NAME.CMD.Add");
+        assert_eq!(cmd_reset.command_name(), "STATE_NAME.CMD.Reset");
+        assert_eq!(cmd_other.command_name(), "STATE_NAME.CMD.SomeOtherVariant");
 
-        assert_eq!(cmd_add.event_name(), "TestState.evt.add");
-        assert_eq!(cmd_reset.event_name(), "TestState.evt.reset");
-        assert_eq!(cmd_other.event_name(), "TestState.evt.some_other_variant");
+        assert_eq!(cmd_add.event_name(), "STATE_NAME.evt.add");
+        assert_eq!(cmd_reset.event_name(), "STATE_NAME.evt.reset");
+        assert_eq!(cmd_other.event_name(), "STATE_NAME.evt.some_other_variant");
     }
 }
