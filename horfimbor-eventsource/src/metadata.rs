@@ -75,6 +75,16 @@ impl CompleteEvent {
     /// # Errors
     ///
     /// Will return `Err` if `Metadata` cannot be de into json
+    pub fn full_event_data(&self) -> Result<EventData, Error> {
+        self.event_data
+            .clone()
+            .metadata_as_json(self.metadata())
+            .map_err(Error::SerdeError)
+    }
+
+    /// # Errors
+    ///
+    /// Will return `Err` if `Metadata` cannot be de into json
     pub fn from_command<C>(command: C, previous_metadata: Option<&Metadata>) -> Result<Self, Error>
     where
         C: Command,

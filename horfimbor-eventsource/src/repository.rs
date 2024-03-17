@@ -418,10 +418,18 @@ where
     where
         S: State,
     {
+        let mut err = Ok(());
         let events: Vec<EventData> = events_with_data
             .into_iter()
-            .map(|e| e.event_data().to_owned())
+            .filter_map(|e| match e.full_event_data() {
+                Ok(event) => Some(event),
+                Err(e) => {
+                    err = Err(EventSourceError::Metadata(e));
+                    None
+                }
+            })
             .collect();
+        err?;
 
         let appended = self
             .event_db

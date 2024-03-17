@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       evenstore:
-        image: eventstore/eventstore:21.10.9-bionic
+        image: eventstore/eventstore:24.2.0-bookworm-slim
         env:
           EVENTSTORE_CLUSTER_SIZE: 1
           EVENTSTORE_RUN_PROJECTIONS: All
@@ -25,7 +25,7 @@ jobs:
           - "1113:1113"
           - "2113:2113"
       redis:
-        image: redis:7.0
+        image: redis:7.2.4-bookworm
         ports:
           - "6379:6379"
     steps:
