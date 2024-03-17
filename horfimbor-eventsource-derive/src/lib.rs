@@ -3,8 +3,8 @@ use proc_macro::{self, TokenStream};
 use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
-use syn::{Data, DeriveInput, Error, Fields, parse_macro_input};
 use syn::spanned::Spanned;
+use syn::{parse_macro_input, Data, DeriveInput, Error, Fields};
 
 macro_rules! derive_error {
     ($string: tt) => {
@@ -16,7 +16,6 @@ macro_rules! derive_error {
 
 #[proc_macro_derive(Command, attributes(state))]
 pub fn derive_command(input: TokenStream) -> TokenStream {
-
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
 
     let state_name = match get_state_name(&input) {
@@ -31,7 +30,6 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
 
     match data {
         Data::Enum(data_enum) => {
-
             fn_core = TokenStream2::new();
 
             // Iterate over enum variants
@@ -40,7 +38,6 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
             // https://doc.servo.org/syn/punctuated/struct.Punctuated.html
             // https://doc.servo.org/syn/struct.Variant.html
             for variant in &data_enum.variants {
-
                 // Variant's name
                 let variant_name = &variant.ident;
 
@@ -53,11 +50,10 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
                     Fields::Named(_) => quote_spanned! {variant.span()=> {..} },
                 };
 
-
                 // Here we construct the function for the current variant
-                let result = format!("CMD.{}", variant_name);
+                let result = format!("{state_name}.CMD.{variant_name}");
                 fn_core.extend(quote! {
-                    #name::#variant_name #fields_in_variant => format!( "{}.{}",state_name,#result),
+                    #name::#variant_name #fields_in_variant => #result,
                 });
             }
         }
@@ -67,7 +63,6 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
     let output = quote! {
         impl Command for #name {
             fn command_name(&self) -> CommandName {
-                let state_name = #state_name::state_name();
                 match self {
                     #fn_core
                 }
@@ -79,9 +74,7 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(Event, attributes(state))]
 pub fn derive_event(input: TokenStream) -> TokenStream {
-
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
-
 
     let state_name = match get_state_name(&input) {
         Ok(value) => value,
@@ -95,7 +88,6 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
 
     match data {
         Data::Enum(data_enum) => {
-
             fn_core = TokenStream2::new();
 
             // Iterate over enum variants
@@ -104,7 +96,6 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
             // https://doc.servo.org/syn/punctuated/struct.Punctuated.html
             // https://doc.servo.org/syn/struct.Variant.html
             for variant in &data_enum.variants {
-
                 // Variant's name
                 let variant_name = &variant.ident;
 
@@ -117,11 +108,14 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
                     Fields::Named(_) => quote_spanned! {variant.span()=> {..} },
                 };
 
-
                 // Here we construct the function for the current variant
-                let result = format!("evt.{}",variant_name.to_string().to_case(Case::Snake));
+                let result = format!(
+                    "{}.evt.{}",
+                    state_name,
+                    variant_name.to_string().to_case(Case::Snake)
+                );
                 fn_core.extend(quote! {
-                    #name::#variant_name #fields_in_variant => format!( "{}.{}",state_name,#result),
+                    #name::#variant_name #fields_in_variant => #result,
                 });
             }
         }
@@ -131,7 +125,6 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
     let output = quote! {
         impl Event for #name {
             fn event_name(&self) -> EventName {
-                let state_name = #state_name::state_name();
                 match self {
                     #fn_core
                 }
@@ -141,39 +134,56 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
     output.into()
 }
 
-
-#[proc_macro_derive(StateNamed)]
+/// # Panics
+///
+/// Will panic if attribute "state" is not parsable
+#[proc_macro_derive(StateNamed, attributes(state))]
 pub fn derive_state(input: TokenStream) -> TokenStream {
-
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
 
-    // println!("{:#?}", input);
-
+    let attrs = &input.attrs;
     let name = &input.ident;
-    let output = format!("{}",&input.ident);
 
-    let output = quote! {
-        impl StateNamed for #name {
-            fn state_name() -> StateName {
-                #output
+    let state = attrs.iter().find(|attr| attr.path().is_ident("state"));
+
+    let output = match state {
+        Some(s) => {
+            let state_name: syn::Ident = match s.parse_args() {
+                Ok(s) => s,
+                Err(_) => {
+                    return derive_error!("attribute 'state' cannot be parsed");
+                }
+            };
+            quote! {
+                impl StateNamed for #name {
+                    fn state_name() -> StateName {
+                        #state_name
+                    }
+                }
             }
         }
+        None => {
+            return derive_error!("attribute 'state' is mandatory");
+        }
     };
+
     output.into()
 }
 
 fn get_state_name(input: &DeriveInput) -> Result<Ident, TokenStream> {
     let attrs = &input.attrs;
 
-    let state = attrs.iter().find(|attr|
-        attr.path().is_ident("state")
-    );
+    let state = attrs.iter().find(|attr| attr.path().is_ident("state"));
 
-    let state = match state {
-        Some(s) => s,
-        None => { return Err(derive_error!("attribute 'state' is mandatory")); }
+    let Some(state) = state else {
+        return Err(derive_error!("attribute 'state' is mandatory"));
     };
 
-    let state_name: syn::Ident = state.parse_args().expect("cannot parse attribute state");
+    let state_name: syn::Ident = match state.parse_args() {
+        Ok(s) => s,
+        Err(_) => {
+            return Err(derive_error!("attribute 'state' cannot be parsed"));
+        }
+    };
     Ok(state_name)
 }

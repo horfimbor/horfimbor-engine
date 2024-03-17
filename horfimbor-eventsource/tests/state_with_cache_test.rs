@@ -10,7 +10,7 @@ use redis::Commands;
 use tokio::time::sleep;
 use uuid::Uuid;
 
-use horfimbor_eventsource::cache_db::redis::RedisStateDb;
+use horfimbor_eventsource::cache_db::redis::StateDb;
 use horfimbor_eventsource::model_key::ModelKey;
 use horfimbor_eventsource::repository::Repository;
 use horfimbor_eventsource::repository::StateRepository;
@@ -22,7 +22,7 @@ mod concurrent;
 mod simple;
 mod state_db;
 
-type EasyRedisCache = RedisStateDb<PokeState>;
+type EasyRedisCache = StateDb<PokeState>;
 
 lazy_static! {
     static ref NAME: &'static str = {

@@ -11,14 +11,16 @@ use horfimbor_eventsource::{
 
 use crate::concurrent::ConcurrentEvent::TimeTaken;
 
+const CONCURRENT_STATE_NAME: StateName = "CONCURRENT_STATE_NAME";
+
 #[derive(Deserialize, Serialize, Clone, Debug, Command)]
-#[state(ConcurrentState)]
+#[state(CONCURRENT_STATE_NAME)]
 pub enum ConcurrentCommand {
     TakeTime(u8, String),
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone, Event)]
-#[state(ConcurrentState)]
+#[state(CONCURRENT_STATE_NAME)]
 pub enum ConcurrentEvent {
     TimeTaken(String),
 }
@@ -27,6 +29,7 @@ pub enum ConcurrentEvent {
 pub enum ConcurrentError {}
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, StateNamed)]
+#[state(CONCURRENT_STATE_NAME)]
 pub struct ConcurrentState {
     pub names: Vec<String>,
 }
@@ -50,7 +53,7 @@ impl State for ConcurrentState {
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
             ConcurrentCommand::TakeTime(time, name) => {
-                let wait = Duration::from_millis((50 * time) as u64);
+                let wait = Duration::from_millis((100 * time) as u64);
 
                 println!("wait : {:?}", wait);
 

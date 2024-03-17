@@ -12,12 +12,13 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::cache_db::CacheDb;
-use crate::metadata::{EventWithMetadata, Metadata};
+use crate::metadata::{CompleteEvent, Metadata};
 use crate::model_key::ModelKey;
 use crate::{Dto, EventSourceError};
 use crate::{State, Stream};
 
 #[derive(Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct DtoRepository<D, C>
 where
     D: Dto,
@@ -29,6 +30,7 @@ where
 }
 
 #[derive(Clone)]
+#[allow(clippy::module_name_repetitions)]
 pub struct StateRepository<S, C>
 where
     S: State,
@@ -49,17 +51,17 @@ impl<M> ModelWithPosition<M>
 where
     M: Dto,
 {
-    pub fn state(&self) -> &M {
+    pub const fn state(&self) -> &M {
         &self.model
     }
 
     pub fn play_event(&mut self, event: &M::Event, position: Option<u64>) {
         self.model.play_event(event);
 
-        self.position = position
+        self.position = position;
     }
 
-    pub fn position(&self) -> Option<u64> {
+    pub const fn position(&self) -> Option<u64> {
         self.position
     }
 }
@@ -125,7 +127,7 @@ where
                 dto.play_event(&event);
             }
 
-            position = Some(original_event.revision)
+            position = Some(original_event.revision);
         }
 
         let result = ModelWithPosition {
@@ -149,7 +151,7 @@ where
             .await;
 
         match created {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(e) => match e {
                 Error::ResourceAlreadyExists => {}
                 _ => return Err(EventSourceError::EventStore(e)),
@@ -215,10 +217,9 @@ where
                     Ordering::Equal
                 }
             } else {
-                match model.position {
-                    None => Ordering::Less,
-                    Some(pos) => pos.cmp(&(event.revision - 1)),
-                }
+                model
+                    .position
+                    .map_or(Ordering::Less, |pos| pos.cmp(&(event.revision - 1)))
             };
 
             match ordering {
@@ -261,6 +262,9 @@ where
         }
     }
 
+    /// # Errors
+    ///
+    /// Will return `Err` if input is not in the format `index@stream_id`
     fn split_event_id(str: &str) -> Result<(&str, &str), EventSourceError<D::Error>> {
         let mut iter = str.split(|c| c == '@');
 
@@ -269,8 +273,7 @@ where
         }
 
         Err(EventSourceError::Position(format!(
-            "{} isnt in the format index@stream_id",
-            str
+            "{str} isnt in the format index@stream_id"
         )))
     }
 }
@@ -284,7 +287,7 @@ where
         Self {
             event_db,
             cache_db,
-            dto: Default::default(),
+            dto: PhantomData,
         }
     }
     fn event_db(&self) -> &EventDb {
@@ -304,7 +307,7 @@ where
         Self {
             event_db,
             state_db,
-            state: Default::default(),
+            state: PhantomData,
         }
     }
 
@@ -321,6 +324,9 @@ where
     S: State,
     C: CacheDb<S>,
 {
+    /// # Errors
+    ///
+    /// Will return `Err` if events cannot be added to the evenstore
     pub async fn add_command(
         &self,
         key: &ModelKey,
@@ -371,13 +377,15 @@ where
             .try_command(command.clone())
             .map_err(EventSourceError::State)?;
 
-        let options = if let Some(position) = model.position {
-            AppendToStreamOptions::default().expected_revision(ExpectedRevision::Exact(position))
-        } else {
-            AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream)
-        };
+        let options = model.position.map_or_else(
+            || AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream),
+            |position| {
+                AppendToStreamOptions::default()
+                    .expected_revision(ExpectedRevision::Exact(position))
+            },
+        );
 
-        let command_metadata = EventWithMetadata::from_command(command, previous_metadata)
+        let command_metadata = CompleteEvent::from_command(command, previous_metadata)
             .map_err(EventSourceError::Metadata)?;
 
         let mut events_data = vec![command_metadata.clone()];
@@ -387,7 +395,7 @@ where
         let res_events = events.clone();
 
         for event in events {
-            let event_metadata = EventWithMetadata::from_event(event, &previous_metadata)
+            let event_metadata = CompleteEvent::from_event(event, &previous_metadata)
                 .map_err(EventSourceError::Metadata)?;
 
             events_data.push(event_metadata.clone());
@@ -405,7 +413,7 @@ where
         &self,
         key: &ModelKey,
         options: &AppendToStreamOptions,
-        events_with_data: Vec<EventWithMetadata>,
+        events_with_data: Vec<CompleteEvent>,
     ) -> Result<bool, EventSourceError<S::Error>>
     where
         S: State,

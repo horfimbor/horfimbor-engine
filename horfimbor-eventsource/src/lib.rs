@@ -2,17 +2,17 @@ use std::error::Error;
 use std::fmt::Debug;
 use std::str::Utf8Error;
 
+use eventstore::Error as EventStoreError;
 /// re-export import :
 pub use horfimbor_eventsource_derive;
-use eventstore::Error as EventStoreError;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use serde_json::Error as SerdeError;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::cache_db::CacheDbError;
-use crate::metadata::MetadataError;
+use crate::cache_db::DbError;
+use crate::metadata::Error as MetadataError;
 use crate::model_key::ModelKey;
 
 pub mod cache_db;
@@ -32,16 +32,16 @@ pub enum Stream {
 impl ToString for Stream {
     fn to_string(&self) -> String {
         match self {
-            Stream::Model(m) => m.format(),
-            Stream::Stream(stream_name) => {
+            Self::Model(m) => m.format(),
+            Self::Stream(stream_name) => {
                 let n = stream_name.replace('-', "_");
-                format!("$ce-{}", n)
+                format!("$ce-{n}")
             }
-            Stream::Event(e) => {
-                format!("$et-{}", e)
+            Self::Event(e) => {
+                format!("$et-{e}")
             }
-            Stream::Correlation(u) => {
-                format!("bc-{}", u)
+            Self::Correlation(u) => {
+                format!("bc-{u}")
             }
         }
     }
@@ -50,7 +50,7 @@ impl ToString for Stream {
 #[derive(Error, Debug)]
 pub enum EventSourceError<S> {
     #[error("Cache error")]
-    CacheDbError(CacheDbError),
+    CacheDbError(DbError),
 
     #[error("Event store error")]
     EventStore(EventStoreError),
@@ -74,8 +74,8 @@ pub enum EventSourceError<S> {
     Unknown,
 }
 
-pub type CommandName = String;
-pub type EventName = String;
+pub type CommandName = &'static str;
+pub type EventName = &'static str;
 pub type StateName = &'static str;
 
 pub trait Command: Serialize + DeserializeOwned + Debug + Send + Clone {
@@ -100,6 +100,9 @@ pub trait StateNamed {
 pub trait State: Dto + StateNamed {
     type Command: Command + Sync + Send;
 
+    /// # Errors
+    ///
+    /// Will return `Err` if Command cannot currently occur OR something is wrong with DB
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
 }
 
@@ -110,11 +113,14 @@ mod tests {
 
     use super::*;
 
+    const STATE_NAME: StateName = "STATE_NAME";
+
     #[derive(Clone, Debug, Default, Serialize, Deserialize, StateNamed)]
+    #[state(STATE_NAME)]
     pub struct TestState {}
 
     #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
-    #[state(TestState)]
+    #[state(STATE_NAME)]
     pub enum ToTest {
         Add(usize),
         Reset,
@@ -129,12 +135,12 @@ mod tests {
             a: "ok".to_string(),
         };
 
-        assert_eq!(cmd_add.command_name(), "TestState.CMD.Add");
-        assert_eq!(cmd_reset.command_name(), "TestState.CMD.Reset");
-        assert_eq!(cmd_other.command_name(), "TestState.CMD.SomeOtherVariant");
+        assert_eq!(cmd_add.command_name(), "STATE_NAME.CMD.Add");
+        assert_eq!(cmd_reset.command_name(), "STATE_NAME.CMD.Reset");
+        assert_eq!(cmd_other.command_name(), "STATE_NAME.CMD.SomeOtherVariant");
 
-        assert_eq!(cmd_add.event_name(), "TestState.evt.add");
-        assert_eq!(cmd_reset.event_name(), "TestState.evt.reset");
-        assert_eq!(cmd_other.event_name(), "TestState.evt.some_other_variant");
+        assert_eq!(cmd_add.event_name(), "STATE_NAME.evt.add");
+        assert_eq!(cmd_reset.event_name(), "STATE_NAME.evt.reset");
+        assert_eq!(cmd_other.event_name(), "STATE_NAME.evt.some_other_variant");
     }
 }
