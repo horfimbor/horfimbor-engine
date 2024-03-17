@@ -66,9 +66,7 @@ pub struct NoCache<S> {
     state: PhantomData<S>,
 }
 
-
 impl<S> NoCache<S> {
-
     #[must_use]
     pub const fn new() -> Self {
         Self { state: PhantomData }

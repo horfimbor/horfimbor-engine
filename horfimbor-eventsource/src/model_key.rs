@@ -9,6 +9,7 @@ pub struct ModelKey {
 }
 
 impl ModelKey {
+    #[must_use]
     pub fn new(stream_name: StreamName, stream_id: String) -> Self {
         // maybe replace with an error ?
         let name = stream_name.replace('-', "_");
@@ -18,6 +19,7 @@ impl ModelKey {
         }
     }
 
+    #[must_use]
     pub fn format(&self) -> String {
         format!("{}-{}", self.stream_name.replace('.', "_"), self.stream_id)
     }
@@ -28,7 +30,7 @@ impl From<&str> for ModelKey {
         let mut split = value.split('-');
         let stream_name = split.next().unwrap_or_default();
         let stream_id = split.collect::<Vec<&str>>().join("-");
-        ModelKey {
+        Self {
             stream_name: stream_name.to_string(),
             stream_id,
         }

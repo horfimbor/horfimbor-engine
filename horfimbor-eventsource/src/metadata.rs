@@ -38,7 +38,12 @@ impl Metadata {
     }
 
     #[must_use]
-    pub const fn new(id: Option<Uuid>, correlation_id: Uuid, causation_id: Uuid, is_event: bool) -> Self {
+    pub const fn new(
+        id: Option<Uuid>,
+        correlation_id: Uuid,
+        causation_id: Uuid,
+        is_event: bool,
+    ) -> Self {
         Self {
             id,
             correlation_id,
@@ -70,12 +75,9 @@ impl CompleteEvent {
     /// # Errors
     ///
     /// Will return `Err` if `Metadata` cannot be de into json
-    pub fn from_command<C>(
-        command: C,
-        previous_metadata: Option<&Metadata>,
-    ) -> Result<Self, Error>
-        where
-            C: Command,
+    pub fn from_command<C>(command: C, previous_metadata: Option<&Metadata>) -> Result<Self, Error>
+    where
+        C: Command,
     {
         let event_data =
             EventData::json(command.command_name(), command).map_err(Error::SerdeError)?;
@@ -87,11 +89,10 @@ impl CompleteEvent {
     ///
     /// Will return `Err` if `Metadata` cannot be serialized into json
     pub fn from_event<E>(event: E, previous_metadata: &Metadata) -> Result<Self, Error>
-        where
-            E: Event,
+    where
+        E: Event,
     {
-        let event_data =
-            EventData::json(event.event_name(), event).map_err(Error::SerdeError)?;
+        let event_data = EventData::json(event.event_name(), event).map_err(Error::SerdeError)?;
 
         Ok(Self::from_event_data(
             event_data,
@@ -113,16 +114,15 @@ impl CompleteEvent {
             Metadata {
                 id: Some(id),
                 correlation_id: id,
-                causation_id:
-                id, is_event
+                causation_id: id,
+                is_event,
             },
             |previous| Metadata {
                 id: Some(id),
                 correlation_id: previous.correlation_id,
-                causation_id:
-                previous.id.unwrap_or(id),
-                is_event
-            }
+                causation_id: previous.id.unwrap_or(id),
+                is_event,
+            },
         );
 
         Self {

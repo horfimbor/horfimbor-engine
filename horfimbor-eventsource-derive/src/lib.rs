@@ -148,7 +148,12 @@ pub fn derive_state(input: TokenStream) -> TokenStream {
 
     let output = match state {
         Some(s) => {
-            let state_name: syn::Ident = s.parse_args().expect("cannot parse attribute state");
+            let state_name: syn::Ident = match s.parse_args() {
+                Ok(s) => s,
+                Err(_) => {
+                    return derive_error!("attribute 'state' cannot be parsed");
+                }
+            };
             quote! {
                 impl StateNamed for #name {
                     fn state_name() -> StateName {
@@ -174,6 +179,11 @@ fn get_state_name(input: &DeriveInput) -> Result<Ident, TokenStream> {
         return Err(derive_error!("attribute 'state' is mandatory"));
     };
 
-    let state_name: syn::Ident = state.parse_args().expect("cannot parse attribute state");
+    let state_name: syn::Ident = match state.parse_args() {
+        Ok(s) => s,
+        Err(_) => {
+            return Err(derive_error!("attribute 'state' cannot be parsed"));
+        }
+    };
     Ok(state_name)
 }

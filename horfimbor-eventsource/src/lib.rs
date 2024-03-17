@@ -32,16 +32,16 @@ pub enum Stream {
 impl ToString for Stream {
     fn to_string(&self) -> String {
         match self {
-            Stream::Model(m) => m.format(),
-            Stream::Stream(stream_name) => {
+            Self::Model(m) => m.format(),
+            Self::Stream(stream_name) => {
                 let n = stream_name.replace('-', "_");
-                format!("$ce-{}", n)
+                format!("$ce-{n}")
             }
-            Stream::Event(e) => {
-                format!("$et-{}", e)
+            Self::Event(e) => {
+                format!("$et-{e}")
             }
-            Stream::Correlation(u) => {
-                format!("bc-{}", u)
+            Self::Correlation(u) => {
+                format!("bc-{u}")
             }
         }
     }
@@ -100,6 +100,9 @@ pub trait StateNamed {
 pub trait State: Dto + StateNamed {
     type Command: Command + Sync + Send;
 
+    /// # Errors
+    ///
+    /// Will return `Err` if Command cannot currently occur OR something is wrong with DB
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
 }
 
