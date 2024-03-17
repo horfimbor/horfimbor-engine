@@ -2,18 +2,19 @@ use std::marker::PhantomData;
 
 use redis::{Client, Commands};
 
-use crate::cache_db::{CacheDb, CacheDbError};
+use crate::cache_db::{CacheDb, DbError};
 use crate::model_key::ModelKey;
 use crate::Dto;
 
 #[derive(Clone)]
-pub struct RedisStateDb<S> {
+pub struct StateDb<S> {
     client: Client,
     state: PhantomData<S>,
 }
 
-impl<S> RedisStateDb<S> {
-    pub fn new(client: Client) -> Self {
+impl<S> StateDb<S> {
+    #[must_use]
+    pub const fn new(client: Client) -> Self {
         Self {
             client,
             state: PhantomData,
@@ -21,32 +22,32 @@ impl<S> RedisStateDb<S> {
     }
 }
 
-impl<S> CacheDb<S> for RedisStateDb<S>
+impl<S> CacheDb<S> for StateDb<S>
 where
     S: Dto,
 {
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError> {
+    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, DbError> {
         let mut connection = self
             .client
             .get_connection()
-            .map_err(|e| CacheDbError::Disconnect(e.to_string()))?;
+            .map_err(|e| DbError::Disconnect(e.to_string()))?;
 
         let data: Option<String> = connection
             .get(key.format())
-            .map_err(|e| CacheDbError::Internal(e.to_string()))?;
+            .map_err(|e| DbError::Internal(e.to_string()))?;
 
         Ok(data)
     }
 
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), CacheDbError> {
+    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), DbError> {
         let mut connection = self
             .client
             .get_connection()
-            .map_err(|e| CacheDbError::Disconnect(e.to_string()))?;
+            .map_err(|e| DbError::Disconnect(e.to_string()))?;
 
         connection
             .set(key.format(), state)
-            .map_err(|err| CacheDbError::Internal(err.to_string()))?;
+            .map_err(|err| DbError::Internal(err.to_string()))?;
 
         Ok(())
     }

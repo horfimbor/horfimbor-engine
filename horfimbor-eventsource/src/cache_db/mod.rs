@@ -13,10 +13,20 @@ pub trait CacheDb<S>: Clone + Send + Sync
 where
     S: Dto,
 {
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, CacheDbError>;
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), CacheDbError>;
+    /// # Errors
+    ///
+    /// Will return `Err` if any error append when calling the DB.
+    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, DbError>;
 
-    fn get(&self, key: &ModelKey) -> Result<ModelWithPosition<S>, CacheDbError> {
+    /// # Errors
+    ///
+    /// Will return `Err` if any error append when calling the DB.
+    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), DbError>;
+
+    /// # Errors
+    ///
+    /// Will return `Err` if any error append when calling the DB.
+    fn get(&self, key: &ModelKey) -> Result<ModelWithPosition<S>, DbError> {
         let data = self.get_from_db(key);
 
         match data {
@@ -26,15 +36,18 @@ where
         }
     }
 
-    fn set(&self, key: &ModelKey, data: ModelWithPosition<S>) -> Result<(), CacheDbError> {
+    /// # Errors
+    ///
+    /// Will return `Err` if any error append when calling the DB.
+    fn set(&self, key: &ModelKey, data: ModelWithPosition<S>) -> Result<(), DbError> {
         let s = serde_json::to_string(&data)
             .map_err(|_err| todo!("error in StateDb.set is not handled yet"))?;
         self.set_in_db(key, s)
     }
 }
 
-#[derive(Error, Debug, PartialEq)]
-pub enum CacheDbError {
+#[derive(Error, Debug, PartialEq, Eq)]
+pub enum DbError {
     #[error("Not found")]
     NotFound,
 
@@ -53,8 +66,11 @@ pub struct NoCache<S> {
     state: PhantomData<S>,
 }
 
+
 impl<S> NoCache<S> {
-    pub fn new() -> Self {
+
+    #[must_use]
+    pub const fn new() -> Self {
         Self { state: PhantomData }
     }
 }
@@ -69,11 +85,11 @@ impl<S> CacheDb<S> for NoCache<S>
 where
     S: Dto,
 {
-    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, CacheDbError> {
+    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, DbError> {
         Ok(None)
     }
 
-    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), CacheDbError> {
+    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), DbError> {
         Ok(())
     }
 }

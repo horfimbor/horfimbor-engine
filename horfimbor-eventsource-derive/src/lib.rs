@@ -51,7 +51,7 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
                 };
 
                 // Here we construct the function for the current variant
-                let result = format!("{}.CMD.{}", state_name, variant_name);
+                let result = format!("{state_name}.CMD.{variant_name}");
                 fn_core.extend(quote! {
                     #name::#variant_name #fields_in_variant => #result,
                 });
@@ -134,6 +134,9 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
     output.into()
 }
 
+/// # Panics
+///
+/// Will panic if attribute "state" is not parsable
 #[proc_macro_derive(StateNamed, attributes(state))]
 pub fn derive_state(input: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
@@ -167,11 +170,8 @@ fn get_state_name(input: &DeriveInput) -> Result<Ident, TokenStream> {
 
     let state = attrs.iter().find(|attr| attr.path().is_ident("state"));
 
-    let state = match state {
-        Some(s) => s,
-        None => {
-            return Err(derive_error!("attribute 'state' is mandatory"));
-        }
+    let Some(state) = state else {
+        return Err(derive_error!("attribute 'state' is mandatory"));
     };
 
     let state_name: syn::Ident = state.parse_args().expect("cannot parse attribute state");

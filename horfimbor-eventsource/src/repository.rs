@@ -12,7 +12,7 @@ use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::cache_db::CacheDb;
-use crate::metadata::{EventWithMetadata, Metadata};
+use crate::metadata::{CompleteEvent, Metadata};
 use crate::model_key::ModelKey;
 use crate::{Dto, EventSourceError};
 use crate::{State, Stream};
@@ -377,7 +377,7 @@ where
             AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream)
         };
 
-        let command_metadata = EventWithMetadata::from_command(command, previous_metadata)
+        let command_metadata = CompleteEvent::from_command(command, previous_metadata)
             .map_err(EventSourceError::Metadata)?;
 
         let mut events_data = vec![command_metadata.clone()];
@@ -387,7 +387,7 @@ where
         let res_events = events.clone();
 
         for event in events {
-            let event_metadata = EventWithMetadata::from_event(event, &previous_metadata)
+            let event_metadata = CompleteEvent::from_event(event, &previous_metadata)
                 .map_err(EventSourceError::Metadata)?;
 
             events_data.push(event_metadata.clone());
@@ -405,23 +405,15 @@ where
         &self,
         key: &ModelKey,
         options: &AppendToStreamOptions,
-        events_with_data: Vec<EventWithMetadata>,
+        events_with_data: Vec<CompleteEvent>,
     ) -> Result<bool, EventSourceError<S::Error>>
     where
         S: State,
     {
-        let mut err = Ok(());
         let events: Vec<EventData> = events_with_data
             .into_iter()
-            .filter_map(|e| match e.full_event_data() {
-                Ok(event) => Some(event),
-                Err(e) => {
-                    err = Err(EventSourceError::Metadata(e));
-                    None
-                }
-            })
+            .map(|e|e.event_data().to_owned())
             .collect();
-        err?;
 
         let appended = self
             .event_db

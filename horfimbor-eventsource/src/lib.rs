@@ -11,8 +11,8 @@ use serde_json::Error as SerdeError;
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::cache_db::CacheDbError;
-use crate::metadata::MetadataError;
+use crate::cache_db::DbError;
+use crate::metadata::Error as MetadataError;
 use crate::model_key::ModelKey;
 
 pub mod cache_db;
@@ -50,7 +50,7 @@ impl ToString for Stream {
 #[derive(Error, Debug)]
 pub enum EventSourceError<S> {
     #[error("Cache error")]
-    CacheDbError(CacheDbError),
+    CacheDbError(DbError),
 
     #[error("Event store error")]
     EventStore(EventStoreError),

@@ -19,20 +19,26 @@ pub struct Metadata {
 }
 
 impl Metadata {
-    pub fn correlation_id(&self) -> Uuid {
+    #[must_use]
+    pub const fn correlation_id(&self) -> Uuid {
         self.correlation_id
     }
-    pub fn causation_id(&self) -> Uuid {
+
+    #[must_use]
+    pub const fn causation_id(&self) -> Uuid {
         self.causation_id
     }
     pub fn set_id(&mut self, id: Option<Uuid>) {
         self.id = id;
     }
-    pub fn id(&self) -> Option<Uuid> {
+
+    #[must_use]
+    pub const fn id(&self) -> Option<Uuid> {
         self.id
     }
 
-    pub fn new(id: Option<Uuid>, correlation_id: Uuid, causation_id: Uuid, is_event: bool) -> Self {
+    #[must_use]
+    pub const fn new(id: Option<Uuid>, correlation_id: Uuid, causation_id: Uuid, is_event: bool) -> Self {
         Self {
             id,
             correlation_id,
@@ -40,51 +46,52 @@ impl Metadata {
             is_event,
         }
     }
-    pub fn is_event(&self) -> bool {
+
+    #[must_use]
+    pub const fn is_event(&self) -> bool {
         self.is_event
     }
 }
 
 #[derive(Clone)]
-pub struct EventWithMetadata {
+pub struct CompleteEvent {
     event_data: EventData,
     metadata: Metadata,
 }
 
-impl EventWithMetadata {
-    pub fn event_data(&self) -> &EventData {
+impl CompleteEvent {
+    pub const fn event_data(&self) -> &EventData {
         &self.event_data
     }
-    pub fn metadata(&self) -> &Metadata {
+    pub const fn metadata(&self) -> &Metadata {
         &self.metadata
     }
 
-    pub fn full_event_data(&self) -> Result<EventData, MetadataError> {
-        self.event_data
-            .clone()
-            .metadata_as_json(self.metadata())
-            .map_err(MetadataError::SerdeError)
-    }
-
+    /// # Errors
+    ///
+    /// Will return `Err` if `Metadata` cannot be de into json
     pub fn from_command<C>(
         command: C,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<Self, MetadataError>
-    where
-        C: Command,
+    ) -> Result<Self, Error>
+        where
+            C: Command,
     {
         let event_data =
-            EventData::json(command.command_name(), command).map_err(MetadataError::SerdeError)?;
+            EventData::json(command.command_name(), command).map_err(Error::SerdeError)?;
 
         Ok(Self::from_event_data(event_data, previous_metadata, false))
     }
 
-    pub fn from_event<E>(event: E, previous_metadata: &Metadata) -> Result<Self, MetadataError>
-    where
-        E: Event,
+    /// # Errors
+    ///
+    /// Will return `Err` if `Metadata` cannot be serialized into json
+    pub fn from_event<E>(event: E, previous_metadata: &Metadata) -> Result<Self, Error>
+        where
+            E: Event,
     {
         let event_data =
-            EventData::json(event.event_name(), event).map_err(MetadataError::SerdeError)?;
+            EventData::json(event.event_name(), event).map_err(Error::SerdeError)?;
 
         Ok(Self::from_event_data(
             event_data,
@@ -102,20 +109,21 @@ impl EventWithMetadata {
 
         event_data = event_data.id(id);
 
-        let metadata = match previous_metadata {
-            None => Metadata {
+        let metadata = previous_metadata.map_or(
+            Metadata {
                 id: Some(id),
                 correlation_id: id,
-                causation_id: id,
-                is_event,
+                causation_id:
+                id, is_event
             },
-            Some(previous) => Metadata {
+            |previous| Metadata {
                 id: Some(id),
                 correlation_id: previous.correlation_id,
-                causation_id: previous.id.unwrap_or(id),
-                is_event,
-            },
-        };
+                causation_id:
+                previous.id.unwrap_or(id),
+                is_event
+            }
+        );
 
         Self {
             event_data,
@@ -125,7 +133,7 @@ impl EventWithMetadata {
 }
 
 #[derive(Error, Debug)]
-pub enum MetadataError {
+pub enum Error {
     #[error("Not found")]
     NotFound,
 
