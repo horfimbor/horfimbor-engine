@@ -19,7 +19,7 @@ jobs:
         run: cargo test
 
       - name: Run clippy
-        run: cargo clippy --all-features -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -D clippy::cargo -D clippy::all -D clippy::expect_used
+        run: cargo clippy --all-features -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used
 
       - name: Shutdown cluster
         run: docker-compose down

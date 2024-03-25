@@ -51,9 +51,36 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
                 };
 
                 // Here we construct the function for the current variant
-                let result = format!("{state_name}.CMD.{variant_name}");
+                let result = format!(".CMD.{variant_name}");
                 fn_core.extend(quote! {
-                    #name::#variant_name #fields_in_variant => #result,
+                    #name::#variant_name #fields_in_variant => {
+
+                        const SUFFIX: &str = #result;
+
+                        const LEN: usize = #state_name.len() + SUFFIX.len();
+                        const BYTES: [u8; LEN] = {
+                            let mut bytes = [0; LEN];
+
+                            let mut i = 0;
+                            while i < #state_name.len() {
+                                bytes[i] = #state_name.as_bytes()[i];
+                                i += 1;
+                            }
+
+                            let mut j = 0;
+                            while j < SUFFIX.len() {
+                                bytes[#state_name.len() + j] = SUFFIX.as_bytes()[j];
+                                j += 1;
+                            }
+
+                            bytes
+                        };
+
+                        match std::str::from_utf8(&BYTES) {
+                            Ok(s) => s,
+                            Err(_) => unreachable!(),
+                        }
+                    },
                 });
             }
         }
@@ -63,6 +90,7 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
     let output = quote! {
         impl Command for #name {
             fn command_name(&self) -> CommandName {
+
                 match self {
                     #fn_core
                 }
@@ -109,13 +137,36 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
                 };
 
                 // Here we construct the function for the current variant
-                let result = format!(
-                    "{}.evt.{}",
-                    state_name,
-                    variant_name.to_string().to_case(Case::Snake)
-                );
+                let result = format!(".evt.{}", variant_name.to_string().to_case(Case::Snake));
                 fn_core.extend(quote! {
-                    #name::#variant_name #fields_in_variant => #result,
+                    #name::#variant_name #fields_in_variant => {
+
+                        const SUFFIX: &str = #result;
+
+                        const LEN: usize = #state_name.len() + SUFFIX.len();
+                        const BYTES: [u8; LEN] = {
+                            let mut bytes = [0; LEN];
+
+                            let mut i = 0;
+                            while i < #state_name.len() {
+                                bytes[i] = #state_name.as_bytes()[i];
+                                i += 1;
+                            }
+
+                            let mut j = 0;
+                            while j < SUFFIX.len() {
+                                bytes[#state_name.len() + j] = SUFFIX.as_bytes()[j];
+                                j += 1;
+                            }
+
+                            bytes
+                        };
+
+                        match std::str::from_utf8(&BYTES) {
+                            Ok(s) => s,
+                            Err(_) => unreachable!(),
+                        }
+                    },
                 });
             }
         }
