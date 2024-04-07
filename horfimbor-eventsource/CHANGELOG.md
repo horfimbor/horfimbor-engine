@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.2.0...horfimbor-eventsource-v0.2.1) - 2024-04-07
+
+### Fixed
+- properly use constant in macro ([#33](https://github.com/horfimbor/horfimbor-engine/pull/33))
+
 ## [0.2.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.1.2...horfimbor-eventsource-v0.2.0) - 2024-03-17
 
 ### Added
