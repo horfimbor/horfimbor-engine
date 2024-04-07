@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use horfimbor_eventsource::{Command, CommandName, Event, EventName, StateName, StateNamed};
 use horfimbor_eventsource_derive::{Command, Event, StateNamed};
 
-const MACRO_DEMO_STATE_NAME: StateName = "MACRO_DEMO_STATE_NAME";
+const MACRO_DEMO_STATE_NAME: StateName = "Something";
 
 #[derive(Debug, Default, PartialEq, Serialize, Deserialize, Clone, StateNamed)]
 #[state(MACRO_DEMO_STATE_NAME)]
@@ -14,6 +14,7 @@ pub struct DemoConstState {}
 pub enum DemoConstCommand {
     FortyTwo,
 }
+
 #[derive(Deserialize, Serialize, Clone, Debug, Event)]
 #[state(MACRO_DEMO_STATE_NAME)]
 pub enum DemoConstEvent {
@@ -22,13 +23,13 @@ pub enum DemoConstEvent {
 
 #[test]
 fn test_macros() {
-    assert_eq!(DemoConstState::state_name(), "MACRO_DEMO_STATE_NAME");
+    assert_eq!(DemoConstState::state_name(), "Something");
     assert_eq!(
         DemoConstCommand::FortyTwo.command_name(),
-        "MACRO_DEMO_STATE_NAME.CMD.FortyTwo"
+        "Something.CMD.FortyTwo"
     );
     assert_eq!(
         DemoConstEvent::FortyTwo.event_name(),
-        "MACRO_DEMO_STATE_NAME.evt.forty_two"
+        "Something.evt.forty_two"
     );
 }
