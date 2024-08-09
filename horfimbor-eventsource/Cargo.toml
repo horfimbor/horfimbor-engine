@@ -1,6 +1,6 @@
 [package]
 name = "horfimbor-eventsource"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 description = "an eventsource implementation on top of eventstore"
 repository = "https://github.com/horfimbor/horfimbor-engine"
