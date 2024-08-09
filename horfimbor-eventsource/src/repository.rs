@@ -399,7 +399,7 @@ where
                 .map_err(EventSourceError::Metadata)?;
 
             events_data.push(event_metadata.clone());
-            previous_metadata = event_metadata.metadata().to_owned();
+            event_metadata.metadata().clone_into(&mut previous_metadata);
         }
 
         let retry = self

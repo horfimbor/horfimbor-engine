@@ -18,7 +18,7 @@ uuid = { version = "1.1", features = ["v4", "serde"] }
 tokio = "1.26"
 thiserror = "1.0"
 horfimbor-eventsource-derive = { version = "0.1.4", path = "../horfimbor-eventsource-derive" }
-redis= { version = "0.25", features = ["tokio-rustls-comp"], optional = true }
+redis= { version = "0.26", features = ["tokio-rustls-comp"], optional = true }
 chrono = "0.4"
 
 [features]
