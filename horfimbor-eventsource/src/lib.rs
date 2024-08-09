@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
 use std::str::Utf8Error;
 
 use eventstore::Error as EventStoreError;
@@ -29,19 +29,21 @@ pub enum Stream {
     Correlation(Uuid),
 }
 
-impl ToString for Stream {
-    fn to_string(&self) -> String {
+impl Display for Stream {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Model(m) => m.format(),
+            Self::Model(m) => {
+                write!(f, "{}", m.format())
+            }
             Self::Stream(stream_name) => {
                 let n = stream_name.replace('-', "_");
-                format!("$ce-{n}")
+                write!(f, "$ce-{n}")
             }
             Self::Event(e) => {
-                format!("$et-{e}")
+                write!(f, "$et-{e}")
             }
             Self::Correlation(u) => {
-                format!("bc-{u}")
+                write!(f, "bc-{u}")
             }
         }
     }
