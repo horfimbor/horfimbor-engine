@@ -1,7 +1,7 @@
 use std::thread;
 use std::time::Duration;
 
-use eventstore::{Client as EventClient, Client};
+use eventstore::Client as EventClient;
 use futures::executor::block_on;
 use tokio::time::sleep;
 use uuid::Uuid;
@@ -143,7 +143,7 @@ async fn concurrent_case() {
     );
 }
 
-fn get_event_db() -> Client {
+fn get_event_db() -> EventClient {
     let settings = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false"
         .to_string()
         .parse()

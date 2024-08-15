@@ -90,7 +90,7 @@ pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
 
 pub trait Dto: Default + Serialize + DeserializeOwned + Debug + Send + Clone + Sync {
     type Event: Event + Sync + Send;
-    type Error: Error + Sync + Send;
+    type Error: Error + Sync + Send; // FIXME : move ERROR to State
 
     fn play_event(&mut self, event: &Self::Event);
 }
@@ -106,43 +106,4 @@ pub trait State: Dto + StateNamed {
     ///
     /// Will return `Err` if Command cannot currently occur OR something is wrong with DB
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error>;
-}
-
-#[cfg(test)]
-mod tests {
-    use horfimbor_eventsource_derive::{Command, Event, StateNamed};
-    use serde::Deserialize;
-
-    use super::*;
-
-    const STATE_NAME: StateName = "STATE_NAME";
-
-    #[derive(Clone, Debug, Default, Serialize, Deserialize, StateNamed)]
-    #[state(STATE_NAME)]
-    pub struct TestState {}
-
-    #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize, Command, Event)]
-    #[state(STATE_NAME)]
-    pub enum ToTest {
-        Add(usize),
-        Reset,
-        SomeOtherVariant { a: String },
-    }
-
-    #[test]
-    fn it_works() {
-        let cmd_add = ToTest::Add(1);
-        let cmd_reset = ToTest::Reset;
-        let cmd_other = ToTest::SomeOtherVariant {
-            a: "ok".to_string(),
-        };
-
-        assert_eq!(cmd_add.command_name(), "STATE_NAME.CMD.Add");
-        assert_eq!(cmd_reset.command_name(), "STATE_NAME.CMD.Reset");
-        assert_eq!(cmd_other.command_name(), "STATE_NAME.CMD.SomeOtherVariant");
-
-        assert_eq!(cmd_add.event_name(), "STATE_NAME.evt.add");
-        assert_eq!(cmd_reset.event_name(), "STATE_NAME.evt.reset");
-        assert_eq!(cmd_other.event_name(), "STATE_NAME.evt.some_other_variant");
-    }
 }

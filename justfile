@@ -1,5 +1,16 @@
-precommit: clippy
+default: precommit
+
+precommit: test clippy
     cargo fmt
+
+start:
+    docker compose up -d
+
+stop:
+    docker compose down
+
+test:
+    cargo test
 
 clippy:
     cargo clippy --all-features -- \
