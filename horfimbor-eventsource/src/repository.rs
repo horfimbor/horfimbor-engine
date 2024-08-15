@@ -5,8 +5,9 @@ use std::marker::PhantomData;
 use async_trait::async_trait;
 use eventstore::{
     AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
-    PersistentSubscriptionOptions, ReadStreamOptions, RetryOptions, StreamPosition,
-    SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions, Subscription,
+    PersistentSubscription, PersistentSubscriptionOptions, ReadStreamOptions, RetryOptions,
+    StreamPosition, SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions,
+    Subscription,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -138,6 +139,7 @@ where
         Ok(result)
     }
 
+    //TODO move out of Repository
     async fn create_subscription(
         &self,
         stream: &Stream,
@@ -161,7 +163,8 @@ where
         Ok(())
     }
 
-    async fn get_subscription(&self, stream: Stream, position: Option<u64>) -> Subscription {
+    //TODO move out of Repository
+    async fn get_subscription(&self, stream: &Stream, position: Option<u64>) -> Subscription {
         let mut options =
             SubscribeToStreamOptions::default().retry_options(RetryOptions::default());
 
@@ -173,6 +176,22 @@ where
         self.event_db()
             .subscribe_to_stream(stream.to_string(), &options)
             .await
+    }
+
+    //TODO move out of Repository
+    async fn get_persistent_subscription(
+        &self,
+        stream: &Stream,
+        group_name: &str,
+    ) -> Result<PersistentSubscription, EventSourceError<<D as Dto>::Error>> {
+        self.create_subscription(stream, group_name).await?;
+
+        let options = SubscribeToPersistentSubscriptionOptions::default().buffer_size(1);
+
+        self.event_db()
+            .subscribe_to_persistent_subscription(stream.to_string(), group_name, &options)
+            .await
+            .map_err(EventSourceError::EventStore)
     }
 
     async fn cache_dto(
