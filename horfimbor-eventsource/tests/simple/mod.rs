@@ -37,7 +37,6 @@ pub struct SimpleState {
 
 impl Dto for SimpleState {
     type Event = SimpleEvent;
-    type Error = SimpleError;
 
     fn play_event(&mut self, event: &Self::Event) {
         match event {
@@ -49,6 +48,7 @@ impl Dto for SimpleState {
 
 impl State for SimpleState {
     type Command = SimpleCommand;
+    type Error = SimpleError;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
@@ -84,7 +84,6 @@ pub struct SimpleNbAddDto {
 
 impl Dto for SimpleNbAddDto {
     type Event = SimpleEvent;
-    type Error = SimpleError;
 
     fn play_event(&mut self, event: &Self::Event) {
         match event {

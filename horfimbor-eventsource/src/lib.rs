@@ -51,7 +51,7 @@ impl Display for Stream {
 }
 
 #[derive(Error, Debug)]
-pub enum EventSourceError<S> {
+pub enum EventSourceError {
     #[error("Cache error")]
     CacheDbError(DbError),
 
@@ -70,11 +70,17 @@ pub enum EventSourceError<S> {
     #[error("Serde error")]
     Serde(SerdeError),
 
-    #[error("State error")]
-    State(S),
-
     #[error("unknown cache db error")]
     Unknown,
+}
+
+#[derive(Error, Debug)]
+pub enum EventSourceStateError<S> {
+    #[error("Event source error")]
+    EventSourceError(EventSourceError),
+
+    #[error("State error")]
+    State(S),
 }
 
 pub type CommandName = &'static str;
@@ -91,7 +97,6 @@ pub trait Event: Serialize + DeserializeOwned + Debug + Send + Clone {
 
 pub trait Dto: Default + Serialize + DeserializeOwned + Debug + Send + Clone + Sync {
     type Event: Event + Sync + Send;
-    type Error: Error + Sync + Send; // FIXME : move ERROR to State
 
     fn play_event(&mut self, event: &Self::Event);
 }
@@ -102,6 +107,7 @@ pub trait StateNamed {
 
 pub trait State: Dto + StateNamed {
     type Command: Command + Sync + Send;
+    type Error: Error + Sync + Send;
 
     /// # Errors
     ///
