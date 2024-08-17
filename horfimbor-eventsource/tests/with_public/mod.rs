@@ -68,7 +68,6 @@ pub struct TTTState {
 
 impl Dto for TTTState {
     type Event = TTTPlayed;
-    type Error = TTTError;
 
     fn play_event(&mut self, event: &Self::Event) {
         match event {
@@ -176,6 +175,7 @@ impl TTTState {
 
 impl State for TTTState {
     type Command = TTTCommand;
+    type Error = TTTError;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {

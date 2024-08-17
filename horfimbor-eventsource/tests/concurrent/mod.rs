@@ -36,7 +36,6 @@ pub struct ConcurrentState {
 
 impl Dto for ConcurrentState {
     type Event = ConcurrentEvent;
-    type Error = ConcurrentError;
 
     fn play_event(&mut self, event: &Self::Event) {
         match event {
@@ -49,6 +48,7 @@ impl Dto for ConcurrentState {
 
 impl State for ConcurrentState {
     type Command = ConcurrentCommand;
+    type Error = ConcurrentError;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {

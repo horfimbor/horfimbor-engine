@@ -14,7 +14,7 @@ use crate::cache_db::CacheDb;
 use crate::helper::create_subscription;
 use crate::metadata::{CompleteEvent, Metadata};
 use crate::model_key::ModelKey;
-use crate::{Dto, EventSourceError};
+use crate::{Dto, EventSourceError, EventSourceStateError};
 use crate::{State, Stream};
 
 #[derive(Clone)]
@@ -76,10 +76,7 @@ where
     fn event_db(&self) -> &EventDb;
     fn cache_db(&self) -> &C;
 
-    async fn get_model(
-        &self,
-        key: &ModelKey,
-    ) -> Result<ModelWithPosition<D>, EventSourceError<D::Error>>
+    async fn get_model(&self, key: &ModelKey) -> Result<ModelWithPosition<D>, EventSourceError>
     where
         D: Dto + DeserializeOwned,
     {
@@ -95,7 +92,7 @@ where
         &self,
         key: &ModelKey,
         value: &ModelWithPosition<D>,
-    ) -> Result<ModelWithPosition<D>, EventSourceError<<D as Dto>::Error>> {
+    ) -> Result<ModelWithPosition<D>, EventSourceError> {
         let mut dto: D = value.model.clone();
         let mut position = value.position;
 
@@ -138,11 +135,7 @@ where
         Ok(result)
     }
 
-    async fn cache_dto(
-        &self,
-        stream: &Stream,
-        group_name: &str,
-    ) -> Result<(), EventSourceError<<D as Dto>::Error>> {
+    async fn cache_dto(&self, stream: &Stream, group_name: &str) -> Result<(), EventSourceError> {
         create_subscription(self.event_db(), stream, group_name)
             .await
             .map_err(EventSourceError::EventStore)?;
@@ -230,7 +223,7 @@ where
     /// # Errors
     ///
     /// Will return `Err` if input is not in the format `index@stream_id`
-    fn split_event_id(str: &str) -> Result<(&str, &str), EventSourceError<D::Error>> {
+    fn split_event_id(str: &str) -> Result<(&str, &str), EventSourceError> {
         let mut iter = str.split(|c| c == '@');
 
         if let (Some(index), Some(stream_id)) = (iter.next(), iter.next()) {
@@ -297,7 +290,7 @@ where
         key: &ModelKey,
         command: S::Command,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<S, EventSourceError<S::Error>>
+    ) -> Result<S, EventSourceStateError<S::Error>>
     where
         S: State,
     {
@@ -330,17 +323,20 @@ where
         key: &ModelKey,
         command: S::Command,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<(S, Vec<S::Event>, bool), EventSourceError<S::Error>>
+    ) -> Result<(S, Vec<S::Event>, bool), EventSourceStateError<S::Error>>
     where
         S: State + Sync,
     {
-        let model: ModelWithPosition<S> = self.get_model(key).await?;
+        let model: ModelWithPosition<S> = self
+            .get_model(key)
+            .await
+            .map_err(EventSourceStateError::EventSourceError)?;
 
         let state = model.model;
 
         let events = state
             .try_command(command.clone())
-            .map_err(EventSourceError::State)?;
+            .map_err(EventSourceStateError::State)?;
 
         let options = model.position.map_or_else(
             || AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream),
@@ -351,7 +347,7 @@ where
         );
 
         let command_metadata = CompleteEvent::from_command(command, previous_metadata)
-            .map_err(EventSourceError::Metadata)?;
+            .map_err(|e| EventSourceStateError::EventSourceError(EventSourceError::Metadata(e)))?;
 
         let mut events_data = vec![command_metadata.clone()];
 
@@ -360,8 +356,10 @@ where
         let res_events = events.clone();
 
         for event in events {
-            let event_metadata = CompleteEvent::from_event(event, &previous_metadata)
-                .map_err(EventSourceError::Metadata)?;
+            let event_metadata =
+                CompleteEvent::from_event(event, &previous_metadata).map_err(|e| {
+                    EventSourceStateError::EventSourceError(EventSourceError::Metadata(e))
+                })?;
 
             events_data.push(event_metadata.clone());
             event_metadata.metadata().clone_into(&mut previous_metadata);
@@ -379,7 +377,7 @@ where
         key: &ModelKey,
         options: &AppendToStreamOptions,
         events_with_data: Vec<CompleteEvent>,
-    ) -> Result<bool, EventSourceError<S::Error>>
+    ) -> Result<bool, EventSourceStateError<S::Error>>
     where
         S: State,
     {
@@ -394,7 +392,7 @@ where
                 }
             })
             .collect();
-        err?;
+        err.map_err(EventSourceStateError::EventSourceError)?;
 
         let appended = self
             .event_db
@@ -407,7 +405,9 @@ where
                 println!("{current} instead of {expected}");
                 Ok(true)
             }
-            Err(e) => Err(EventSourceError::EventStore(e)),
+            Err(e) => Err(EventSourceStateError::EventSourceError(
+                EventSourceError::EventStore(e),
+            )),
         }
     }
 }

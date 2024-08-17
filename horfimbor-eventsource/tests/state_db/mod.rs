@@ -32,7 +32,6 @@ pub struct PokeState {
 
 impl Dto for PokeState {
     type Event = PokeEvent;
-    type Error = PokeError;
 
     fn play_event(&mut self, event: &Self::Event) {
         match event {
@@ -43,6 +42,7 @@ impl Dto for PokeState {
 
 impl State for PokeState {
     type Command = PokeCommand;
+    type Error = PokeError;
 
     fn try_command(&self, command: Self::Command) -> Result<Vec<Self::Event>, Self::Error> {
         match command {
