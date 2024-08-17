@@ -5,14 +5,13 @@ use std::marker::PhantomData;
 use async_trait::async_trait;
 use eventstore::{
     AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
-    PersistentSubscription, PersistentSubscriptionOptions, ReadStreamOptions, RetryOptions,
-    StreamPosition, SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions,
-    Subscription,
+    ReadStreamOptions, StreamPosition, SubscribeToPersistentSubscriptionOptions,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 
 use crate::cache_db::CacheDb;
+use crate::helper::create_subscription;
 use crate::metadata::{CompleteEvent, Metadata};
 use crate::model_key::ModelKey;
 use crate::{Dto, EventSourceError};
@@ -139,67 +138,14 @@ where
         Ok(result)
     }
 
-    //TODO move out of Repository
-    async fn create_subscription(
-        &self,
-        stream: &Stream,
-        group_name: &str,
-    ) -> Result<(), EventSourceError<D::Error>> {
-        let opt = PersistentSubscriptionOptions::default().resolve_link_tos(true);
-
-        let created = self
-            .event_db()
-            .create_persistent_subscription(stream.to_string(), group_name, &opt)
-            .await;
-
-        match created {
-            Ok(()) => {}
-            Err(e) => match e {
-                Error::ResourceAlreadyExists => {}
-                _ => return Err(EventSourceError::EventStore(e)),
-            },
-        }
-
-        Ok(())
-    }
-
-    //TODO move out of Repository
-    async fn get_subscription(&self, stream: &Stream, position: Option<u64>) -> Subscription {
-        let mut options =
-            SubscribeToStreamOptions::default().retry_options(RetryOptions::default());
-
-        options = match position {
-            None => options.start_from(StreamPosition::Start),
-            Some(n) => options.start_from(StreamPosition::Position(n)),
-        };
-
-        self.event_db()
-            .subscribe_to_stream(stream.to_string(), &options)
-            .await
-    }
-
-    //TODO move out of Repository
-    async fn get_persistent_subscription(
-        &self,
-        stream: &Stream,
-        group_name: &str,
-    ) -> Result<PersistentSubscription, EventSourceError<<D as Dto>::Error>> {
-        self.create_subscription(stream, group_name).await?;
-
-        let options = SubscribeToPersistentSubscriptionOptions::default().buffer_size(1);
-
-        self.event_db()
-            .subscribe_to_persistent_subscription(stream.to_string(), group_name, &options)
-            .await
-            .map_err(EventSourceError::EventStore)
-    }
-
     async fn cache_dto(
         &self,
         stream: &Stream,
         group_name: &str,
     ) -> Result<(), EventSourceError<<D as Dto>::Error>> {
-        self.create_subscription(stream, group_name).await?;
+        create_subscription(self.event_db(), stream, group_name)
+            .await
+            .map_err(EventSourceError::EventStore)?;
 
         let options = SubscribeToPersistentSubscriptionOptions::default().buffer_size(1);
 

@@ -1,10 +1,11 @@
 use crate::with_public::public::Player::Circle;
-use crate::with_public::public::{TTTEvents, TTTPub, Victory, TTT_PUB, TTT_STREAM};
+use crate::with_public::public::{TTTEvents, Victory, TTT_PUB, TTT_STREAM};
 use crate::with_public::{TTTCommand, TTTState};
 use eventstore::Client as EventClient;
 use horfimbor_eventsource::cache_db::NoCache;
+use horfimbor_eventsource::helper::get_persistent_subscription;
 use horfimbor_eventsource::model_key::ModelKey;
-use horfimbor_eventsource::repository::{DtoRepository, Repository, StateRepository};
+use horfimbor_eventsource::repository::{Repository, StateRepository};
 use horfimbor_eventsource::Stream;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -13,7 +14,6 @@ use uuid::Uuid;
 mod with_public;
 
 type TicTacToeState = NoCache<TTTState>;
-type TicTacToePub = NoCache<TTTPub>;
 
 #[tokio::test]
 async fn test_with_public_event() {
@@ -25,10 +25,10 @@ async fn test_with_public_event() {
         let mut nb = 0;
 
         let stream = Stream::Stream(TTT_STREAM);
-        let pub_dto = DtoRepository::new(get_event_db(), TicTacToePub::new());
 
-        let mut sub = pub_dto
-            .get_persistent_subscription(&stream, "beta")
+        let event_db = get_event_db();
+
+        let mut sub = get_persistent_subscription(&event_db, &stream, "beta")
             .await
             .expect("cannot create subscribe");
 

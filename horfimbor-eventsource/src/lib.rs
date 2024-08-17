@@ -16,6 +16,7 @@ use crate::metadata::Error as MetadataError;
 use crate::model_key::ModelKey;
 
 pub mod cache_db;
+pub mod helper;
 pub mod metadata;
 pub mod model_key;
 pub mod repository;
