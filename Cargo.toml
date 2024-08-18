@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "horfimbor-eventsource",
     "horfimbor-eventsource-derive"
-]
+, "horfimbor-time"]
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
