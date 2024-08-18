@@ -21,5 +21,10 @@ jobs:
       - name: Run clippy
         run: cargo clippy --all-features -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used
 
+      - name: Run machete
+        run: |
+          cargo install cargo-machete
+          cargo machete
+
       - name: Shutdown cluster
         run: docker compose down
