@@ -2,8 +2,11 @@
 resolver = "2"
 members = [
     "horfimbor-eventsource",
-    "horfimbor-eventsource-derive"
-, "horfimbor-time"]
+    "horfimbor-eventsource-derive",
+    "horfimbor-time"]
+
+[workspace.dependencies]
+thiserror = "1.0"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
