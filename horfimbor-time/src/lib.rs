@@ -32,22 +32,22 @@ impl Add<Self> for HfDuration {
 
 #[derive(Copy, Clone, Debug)]
 pub struct HfTimeConfiguration {
-    loop_length: u128,
-    length: u128,
+    irl_length: u128,
+    ig_length: u128,
 }
 
 impl HfTimeConfiguration {
     /// # Errors
     ///
     /// Will return `Err` if configuration is invalid
-    pub const fn new(loop_length: u128, length: u128) -> Result<Self, HfTimeError> {
-        if loop_length < length {
+    pub fn new(irl_length: Duration, ig_length: Duration) -> Result<Self, HfTimeError> {
+        if irl_length.lt(&ig_length) {
             return Err(HfTimeError::InvalidLength);
         }
 
         Ok(Self {
-            loop_length,
-            length,
+            irl_length: irl_length.as_millis(),
+            ig_length: ig_length.as_millis(),
         })
     }
 }
@@ -78,10 +78,10 @@ impl HfTime {
 
     #[must_use]
     pub const fn hf_new(time: &HfDuration, config: HfTimeConfiguration) -> Self {
-        let nb_loop = time.value / config.length;
-        let rest = time.value % config.length;
+        let nb_loop = time.value / config.ig_length;
+        let rest = time.value % config.ig_length;
         Self {
-            time: nb_loop * config.loop_length + rest,
+            time: nb_loop * config.irl_length + rest,
             config,
         }
     }
@@ -91,12 +91,12 @@ impl HfTime {
     }
     #[must_use]
     pub const fn as_hf_millis(&self) -> u128 {
-        let nb_loop = self.time / self.config.loop_length;
-        let rest = self.time % self.config.loop_length;
-        if rest > self.config.length {
-            return (nb_loop + 1) * self.config.length;
+        let nb_loop = self.time / self.config.irl_length;
+        let rest = self.time % self.config.irl_length;
+        if rest > self.config.ig_length {
+            return (nb_loop + 1) * self.config.ig_length;
         }
-        nb_loop * self.config.length + rest
+        nb_loop * self.config.ig_length + rest
     }
     #[must_use]
     pub const fn as_hf_duration(&self) -> HfDuration {
@@ -111,9 +111,11 @@ mod test_new {
     use super::*;
 
     #[test]
-    fn test_start() {
-        let config = HfTimeConfiguration::new(10, 3).expect("cannot create configuration");
+    fn test_first_iterations() {
+        let config = HfTimeConfiguration::new(Duration::from_millis(10), Duration::from_millis(3))
+            .expect("cannot create configuration");
 
+        // example of how we want HfTime to pass.
         let vals = vec![
             (1, 1),
             (2, 2),
@@ -136,13 +138,20 @@ mod test_new {
             assert_eq!(from_time.as_hf_millis(), v.1);
         }
     }
+
     #[test]
-    fn test_creation() {
-        let config = HfTimeConfiguration::new(1000, 500).expect("cannot create configuration");
+    fn test_creation_from_time() {
+        let config = HfTimeConfiguration::new(Duration::from_secs(1), Duration::from_millis(500))
+            .expect("cannot create configuration");
 
         let from_time = HfTime::new(Duration::from_millis(1200), config);
         assert_eq!(from_time.as_millis(), 1200);
         assert_eq!(from_time.as_hf_millis(), 700);
+    }
+    #[test]
+    fn test_creation_from_hf_time() {
+        let config = HfTimeConfiguration::new(Duration::from_secs(1), Duration::from_millis(500))
+            .expect("cannot create configuration");
 
         let from_time = HfTime::hf_new(&HfDuration::from_millis(1200), config);
         assert_eq!(from_time.as_millis(), 2200);
@@ -165,13 +174,24 @@ impl Add<HfDuration> for HfTime {
     type Output = Self;
 
     fn add(self, rhs: HfDuration) -> Self {
-        let current_loop = self.time / self.config.loop_length;
-        let current_rest = self.time % self.config.loop_length;
+        let mut nb_loop = self.time / self.config.irl_length;
+        nb_loop += rhs.value / self.config.ig_length;
 
-        let nb_loop = rhs.value / self.config.length;
-        let rest = rhs.value % self.config.length;
+        let mut current_rest = self.time % self.config.irl_length;
 
-        let time = (current_loop + nb_loop) * self.config.loop_length + current_rest + rest;
+        if current_rest > self.config.ig_length {
+            nb_loop += 1;
+            current_rest = 0;
+        }
+
+        let mut rest = rhs.value % self.config.ig_length;
+        if current_rest + rest > self.config.ig_length {
+            nb_loop += 1;
+            current_rest = 0;
+            rest = current_rest + rest - self.config.ig_length;
+        }
+
+        let time = nb_loop * self.config.irl_length + current_rest + rest;
 
         Self {
             time,
@@ -185,46 +205,62 @@ mod test_add {
     use super::*;
 
     #[test]
-    fn test_edge() {
-        let config = HfTimeConfiguration::new(1000, 500).expect("cannot create configuration");
-
+    fn test_add_only_full_loop() {
+        let config =
+            HfTimeConfiguration::new(Duration::from_millis(120), Duration::from_millis(60))
+                .expect("cannot create configuration");
         let mut time = HfTime::new(Duration::ZERO, config);
 
-        time = time + HfDuration::from_millis(400);
-        assert_eq!(time.as_millis(), 400);
-        assert_eq!(time.as_hf_millis(), 400);
+        time = time + Duration::from_millis(120 * 5);
+        assert_eq!(time.as_hf_millis(), 60 * 5);
+        assert_eq!(time.as_millis(), 120 * 5);
 
-        time = time + Duration::from_millis(200);
-        assert_eq!(time.as_millis(), 600);
-        assert_eq!(time.as_hf_millis(), 500);
-
-        time = time + HfDuration::from_millis(500);
-        assert_eq!(time.as_millis(), 1600);
-        assert_eq!(time.as_hf_millis(), 1000);
+        time = time + HfDuration::from_millis(60 * 3);
+        assert_eq!(time.as_hf_millis(), 60 * 8);
+        assert_eq!(time.as_millis(), 120 * 8);
     }
 
     #[test]
-    fn test_add() {
-        let config = HfTimeConfiguration::new(1000, 500).expect("cannot create configuration");
+    fn test_add_full_loop_during_length() {
+        let config =
+            HfTimeConfiguration::new(Duration::from_millis(100), Duration::from_millis(30))
+                .expect("cannot create configuration");
+        let mut time = HfTime::new(Duration::from_millis(15), config);
 
-        let mut time = HfTime::new(Duration::ZERO, config);
+        time = time + Duration::from_millis(100 * 2);
+        assert_eq!(time.as_hf_millis(), 75);
+        assert_eq!(time.as_millis(), 215);
 
-        assert_eq!(time.as_millis(), 0);
+        time = time + HfDuration::from_millis(30);
+        assert_eq!(time.as_hf_millis(), 105);
+        assert_eq!(time.as_millis(), 315);
+    }
 
-        time = time + Duration::from_secs(100);
-        assert_eq!(time.as_millis(), 100000);
-        assert_eq!(time.as_hf_millis(), 50000);
+    #[test]
+    fn test_add_full_loop_after_length() {
+        let config =
+            HfTimeConfiguration::new(Duration::from_millis(100), Duration::from_millis(30))
+                .expect("cannot create configuration");
+        let mut time = HfTime::new(Duration::from_millis(50), config);
 
-        time = time + HfDuration::from_millis(1400);
-        assert_eq!(time.as_millis(), 102400);
-        assert_eq!(time.as_hf_millis(), 51400);
+        time = time + Duration::from_millis(100);
+        assert_eq!(time.as_hf_millis(), 60);
+        assert_eq!(time.as_millis(), 150);
 
-        time = time + Duration::from_millis(500);
-        assert_eq!(time.as_millis(), 102900);
-        assert_eq!(time.as_hf_millis(), 51500);
+        time = time + HfDuration::from_millis(30);
+        assert_eq!(time.as_hf_millis(), 90);
+        assert_eq!(time.as_millis(), 300);
+    }
 
-        time = time + HfDuration::from_millis(500);
-        assert_eq!(time.as_millis(), 103900);
-        assert_eq!(time.as_hf_millis(), 52000);
+    #[test]
+    fn test_add_partial_after_length() {
+        let config =
+            HfTimeConfiguration::new(Duration::from_millis(1000), Duration::from_millis(100))
+                .expect("cannot create configuration");
+        let mut time = HfTime::new(Duration::from_millis(500), config);
+
+        time = time + HfDuration::from_millis(10);
+        assert_eq!(time.as_hf_millis(), 110);
+        assert_eq!(time.as_millis(), 1010);
     }
 }
