@@ -1,0 +1,15 @@
+[package]
+name = "horfimbor-time"
+version = "0.1.0"
+edition = "2021"
+description = "Time calculator for the Horfimbor game"
+repository = "https://github.com/horfimbor/horfimbor-time"
+license-file = "LICENSE"
+keywords = ["gamedev", "time"]
+categories = ["game-development"]
+
+[dependencies]
+thiserror = { workspace = true }
+
+[lints]
+workspace = true
