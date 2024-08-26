@@ -12,6 +12,9 @@ stop:
 test:
     cargo test
 
+doc projet:
+    cargo doc -p horfimbor-{{projet}} --open
+
 clippy:
     cargo clippy --all-features -- \
     -D clippy::correctness \
