@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.5](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-derive-v0.1.4...horfimbor-eventsource-derive-v0.1.5) - 2024-08-27
+
+### Other
+- add doc ([#45](https://github.com/horfimbor/horfimbor-engine/pull/45))
+- Add time ([#42](https://github.com/horfimbor/horfimbor-engine/pull/42))
+- allow event composition to allow the use of public events ([#37](https://github.com/horfimbor/horfimbor-engine/pull/37))
+
 ## [0.1.4](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-derive-v0.1.3...horfimbor-eventsource-derive-v0.1.4) - 2024-04-07
 
 ### Fixed
