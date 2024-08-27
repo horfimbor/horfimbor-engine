@@ -1,9 +1,8 @@
 #![deny(missing_docs)]
 #![doc = include_str!("../README.md")]
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use core::ops::Add;
-use std::time::Duration;
 use thiserror::Error;
 
 /// `HfTime` can fail to construct.
@@ -12,10 +11,6 @@ pub enum HfTimeError {
     /// in game time must be slower than real time
     #[error("loop length must be greater than length and non zero")]
     InvalidLength,
-
-    /// conversion could fail
-    #[error("duration cannot be use")]
-    InvalidDuration,
 }
 
 /// the in-game time is just a wrapper around an integer
@@ -27,13 +22,13 @@ pub struct HfDuration {
 impl HfDuration {
     /// the baseline for a web game is the millisecond
     #[must_use]
-    pub const fn from_millis(value: i64) -> Self {
+    pub const fn milliseconds(value: i64) -> Self {
         Self { value }
     }
 
     /// can be easier to work with seconds
     #[must_use]
-    pub const fn from_secs(value: i64) -> Self {
+    pub const fn seconds(value: i64) -> Self {
         Self {
             value: value * 1000,
         }
@@ -74,14 +69,8 @@ impl HfTimeConfiguration {
 
         Ok(Self {
             start_time: start_time.timestamp_millis(),
-            irl_length: irl_length
-                .as_millis()
-                .try_into()
-                .map_err(|_| HfTimeError::InvalidDuration)?,
-            ig_length: ig_length
-                .as_millis()
-                .try_into()
-                .map_err(|_| HfTimeError::InvalidDuration)?,
+            irl_length: irl_length.num_milliseconds(),
+            ig_length: ig_length.num_milliseconds(),
         })
     }
 }
@@ -147,8 +136,8 @@ mod test_new {
     #[test]
     fn test_first_iterations() {
         let config = HfTimeConfiguration::new(
-            Duration::from_millis(10),
-            Duration::from_millis(3),
+            Duration::milliseconds(10),
+            Duration::milliseconds(3),
             DateTime::default(),
         )
         .expect("cannot create configuration");
@@ -183,8 +172,8 @@ mod test_new {
     #[test]
     fn test_creation_from_time() {
         let config = HfTimeConfiguration::new(
-            Duration::from_secs(1),
-            Duration::from_millis(500),
+            Duration::seconds(1),
+            Duration::milliseconds(500),
             DateTime::default(),
         )
         .expect("cannot create configuration");
@@ -200,8 +189,8 @@ mod test_new {
     #[test]
     fn test_creation_with_start_time() {
         let config = HfTimeConfiguration::new(
-            Duration::from_secs(1),
-            Duration::from_millis(500),
+            Duration::seconds(1),
+            Duration::milliseconds(500),
             DateTime::default(),
         )
         .expect("cannot create configuration");
@@ -221,7 +210,7 @@ impl Add<Duration> for HfTime {
     #[allow(clippy::cast_possible_truncation)]
     fn add(self, rhs: Duration) -> Self {
         Self {
-            time: self.time + rhs.as_millis() as i64,
+            time: self.time + rhs.num_milliseconds(),
             config: self.config,
         }
     }
@@ -263,8 +252,8 @@ mod test_add {
     #[test]
     fn test_add_only_full_loop() {
         let config = HfTimeConfiguration::new(
-            Duration::from_millis(120),
-            Duration::from_millis(60),
+            Duration::milliseconds(120),
+            Duration::milliseconds(60),
             DateTime::default(),
         )
         .expect("cannot create configuration");
@@ -273,11 +262,11 @@ mod test_add {
             config,
         );
 
-        time = time + Duration::from_millis(120 * 5);
+        time = time + Duration::milliseconds(120 * 5);
         assert_eq!(time.as_hf_millis(), 60 * 5);
         assert_eq!(time.as_millis(), 120 * 5);
 
-        time = time + HfDuration::from_millis(60 * 3);
+        time = time + HfDuration::milliseconds(60 * 3);
         assert_eq!(time.as_hf_millis(), 60 * 8);
         assert_eq!(time.as_millis(), 120 * 8);
     }
@@ -285,8 +274,8 @@ mod test_add {
     #[test]
     fn test_add_full_loop_during_length() {
         let config = HfTimeConfiguration::new(
-            Duration::from_millis(100),
-            Duration::from_millis(30),
+            Duration::milliseconds(100),
+            Duration::milliseconds(30),
             DateTime::default(),
         )
         .expect("cannot create configuration");
@@ -295,11 +284,11 @@ mod test_add {
             config,
         );
 
-        time = time + Duration::from_millis(100 * 2);
+        time = time + Duration::milliseconds(100 * 2);
         assert_eq!(time.as_hf_millis(), 75);
         assert_eq!(time.as_millis(), 215);
 
-        time = time + HfDuration::from_millis(30);
+        time = time + HfDuration::milliseconds(30);
         assert_eq!(time.as_hf_millis(), 105);
         assert_eq!(time.as_millis(), 315);
     }
@@ -307,8 +296,8 @@ mod test_add {
     #[test]
     fn test_add_full_loop_after_length() {
         let config = HfTimeConfiguration::new(
-            Duration::from_millis(100),
-            Duration::from_millis(30),
+            Duration::milliseconds(100),
+            Duration::milliseconds(30),
             DateTime::default(),
         )
         .expect("cannot create configuration");
@@ -317,11 +306,11 @@ mod test_add {
             config,
         );
 
-        time = time + Duration::from_millis(100);
+        time = time + Duration::milliseconds(100);
         assert_eq!(time.as_hf_millis(), 60);
         assert_eq!(time.as_millis(), 150);
 
-        time = time + HfDuration::from_millis(30);
+        time = time + HfDuration::milliseconds(30);
         assert_eq!(time.as_hf_millis(), 90);
         assert_eq!(time.as_millis(), 300);
     }
@@ -329,8 +318,8 @@ mod test_add {
     #[test]
     fn test_add_partial_after_length() {
         let config = HfTimeConfiguration::new(
-            Duration::from_millis(1000),
-            Duration::from_millis(100),
+            Duration::milliseconds(1000),
+            Duration::milliseconds(100),
             DateTime::default(),
         )
         .expect("cannot create configuration");
@@ -339,7 +328,7 @@ mod test_add {
             config,
         );
 
-        time = time + HfDuration::from_millis(10);
+        time = time + HfDuration::milliseconds(10);
         assert_eq!(time.as_hf_millis(), 110);
         assert_eq!(time.as_millis(), 1010);
     }
@@ -353,8 +342,8 @@ mod test_creation_after_epoch {
     #[test]
     fn test_create_millennium() {
         let config = HfTimeConfiguration::new(
-            Duration::from_secs(3600 * 24),
-            Duration::from_secs(3600 * 2),
+            Duration::seconds(3600 * 24),
+            Duration::seconds(3600 * 2),
             Utc.with_ymd_and_hms(2020, 1, 1, 0, 0, 0).unwrap(),
         )
         .expect("cannot create configuration");
