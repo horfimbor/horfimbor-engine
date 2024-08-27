@@ -1,11 +1,13 @@
+//! common metadata for all the events and command
+
 use eventstore::EventData;
 use serde::{Deserialize, Serialize};
 use serde_json::Error as SerdeError;
-use thiserror::Error;
 use uuid::Uuid;
 
 use crate::{Command, Event};
 
+/// `Metadata` must be serialized a certain way to allow build-in projections
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Metadata {
     #[serde(skip_serializing)]
@@ -18,25 +20,32 @@ pub struct Metadata {
     is_event: bool,
 }
 
+/// `Metadata` provide genealogy of the events
 impl Metadata {
+    /// the `correlation_id` is the oldest event in the genealogy
     #[must_use]
     pub const fn correlation_id(&self) -> Uuid {
         self.correlation_id
     }
 
+    /// the `causation_id` is the youngest event in the genealogy
     #[must_use]
     pub const fn causation_id(&self) -> Uuid {
         self.causation_id
     }
+
+    /// id can be set afterward
     pub fn set_id(&mut self, id: Option<Uuid>) {
         self.id = id;
     }
 
+    /// simple getter
     #[must_use]
     pub const fn id(&self) -> Option<Uuid> {
         self.id
     }
 
+    /// straight forward constructor
     #[must_use]
     pub const fn new(
         id: Option<Uuid>,
@@ -52,12 +61,14 @@ impl Metadata {
         }
     }
 
+    /// the event in the database can be an event or a command
     #[must_use]
     pub const fn is_event(&self) -> bool {
         self.is_event
     }
 }
 
+/// event in the db are composed of the `EventData` and the `Metadata`
 #[derive(Clone)]
 pub struct CompleteEvent {
     event_data: EventData,
@@ -65,9 +76,12 @@ pub struct CompleteEvent {
 }
 
 impl CompleteEvent {
+    /// public readonly getter for the `EventData`
     pub const fn event_data(&self) -> &EventData {
         &self.event_data
     }
+
+    /// public readonly getter for the `Metadata`
     pub const fn metadata(&self) -> &Metadata {
         &self.metadata
     }
@@ -75,22 +89,21 @@ impl CompleteEvent {
     /// # Errors
     ///
     /// Will return `Err` if `Metadata` cannot be de into json
-    pub fn full_event_data(&self) -> Result<EventData, Error> {
-        self.event_data
-            .clone()
-            .metadata_as_json(self.metadata())
-            .map_err(Error::SerdeError)
+    pub fn full_event_data(&self) -> Result<EventData, SerdeError> {
+        self.event_data.clone().metadata_as_json(self.metadata())
     }
 
     /// # Errors
     ///
     /// Will return `Err` if `Metadata` cannot be de into json
-    pub fn from_command<C>(command: C, previous_metadata: Option<&Metadata>) -> Result<Self, Error>
+    pub fn from_command<C>(
+        command: C,
+        previous_metadata: Option<&Metadata>,
+    ) -> Result<Self, SerdeError>
     where
         C: Command,
     {
-        let event_data =
-            EventData::json(command.command_name(), command).map_err(Error::SerdeError)?;
+        let event_data = EventData::json(command.command_name(), command)?;
 
         Ok(Self::from_event_data(event_data, previous_metadata, false))
     }
@@ -98,11 +111,11 @@ impl CompleteEvent {
     /// # Errors
     ///
     /// Will return `Err` if `Metadata` cannot be serialized into json
-    pub fn from_event<E>(event: E, previous_metadata: &Metadata) -> Result<Self, Error>
+    pub fn from_event<E>(event: E, previous_metadata: &Metadata) -> Result<Self, SerdeError>
     where
         E: Event,
     {
-        let event_data = EventData::json(event.event_name(), event).map_err(Error::SerdeError)?;
+        let event_data = EventData::json(event.event_name(), event)?;
 
         Ok(Self::from_event_data(
             event_data,
@@ -140,13 +153,4 @@ impl CompleteEvent {
             metadata,
         }
     }
-}
-
-#[derive(Error, Debug)]
-pub enum Error {
-    #[error("Not found")]
-    NotFound,
-
-    #[error("internal `{0}`")]
-    SerdeError(SerdeError),
 }

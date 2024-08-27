@@ -1,3 +1,5 @@
+//! handle the cache
+
 use std::marker::PhantomData;
 
 use thiserror::Error;
@@ -9,20 +11,27 @@ use crate::Dto;
 #[cfg(feature = "cache-redis")]
 pub mod redis;
 
+/// `CacheDb` has only one purpose, reading and writing state somewhere
 pub trait CacheDb<S>: Clone + Send + Sync
 where
     S: Dto,
 {
+    /// internal function to read from the db
+    ///
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
     fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, DbError>;
 
+    /// internal function to write in the db
+    ///
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
     fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), DbError>;
 
+    /// public function to read the db
+    ///
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
@@ -36,6 +45,8 @@ where
         }
     }
 
+    /// public function to write in the db
+    ///
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
@@ -46,27 +57,27 @@ where
     }
 }
 
+/// cache db can fail in multiple ways.
 #[derive(Error, Debug, PartialEq, Eq)]
 pub enum DbError {
-    #[error("Not found")]
-    NotFound,
-
+    /// data store disconnected
     #[error("data store disconnected `{0}`")]
     Disconnect(String),
 
-    #[error("unknown cache db error")]
-    Unknown,
-
+    /// internal error can be anything depending on the `cache_db`
     #[error("internal `{0}`")]
     Internal(String),
 }
 
+/// `NoCache` is a placeholder allowing quick development,
+/// not recommended for production usage
 #[derive(Clone)]
 pub struct NoCache<S> {
     state: PhantomData<S>,
 }
 
 impl<S> NoCache<S> {
+    /// simple constructor
     #[must_use]
     pub const fn new() -> Self {
         Self { state: PhantomData }

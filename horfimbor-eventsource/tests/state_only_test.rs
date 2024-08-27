@@ -27,7 +27,7 @@ async fn easy_case() {
 
     let repo_dto = DtoRepository::new(get_event_db(), EasyNoCacheDto::new());
 
-    let key = ModelKey::new("simple_test", Uuid::new_v4().to_string());
+    let key = ModelKey::new("simple_test", Uuid::new_v4());
 
     // test empty data :
 
@@ -85,7 +85,7 @@ type ConcurrentNoCache = NoCache<ConcurrentState>;
 async fn concurrent_case() {
     let repo = StateRepository::new(get_event_db(), ConcurrentNoCache::new());
 
-    let key = ModelKey::new("concurrent_test", Uuid::new_v4().to_string());
+    let key = ModelKey::new("concurrent_test", Uuid::new_v4());
 
     let model = repo.get_model(&key).await.unwrap();
 

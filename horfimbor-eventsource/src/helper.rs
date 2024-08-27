@@ -1,3 +1,5 @@
+//! helper to create subscription
+
 use crate::Stream;
 use eventstore::Error as EventStoreError;
 use eventstore::{
@@ -31,6 +33,8 @@ pub async fn create_subscription(
     Ok(())
 }
 
+/// create a temporary subscription
+/// the typical usage is to create a websocket.
 pub async fn get_subscription(
     event_db: &EventDb,
     stream: &Stream,
@@ -48,6 +52,12 @@ pub async fn get_subscription(
         .await
 }
 
+/// create a persistent subscription,
+/// typical usage are :
+/// - cache state,
+/// - listen to public events,
+/// - ...
+///
 /// # Errors
 ///
 /// Will return `Err` if the subscription cannot be created.

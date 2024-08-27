@@ -61,7 +61,7 @@ async fn test_with_public_event() {
         }
     });
 
-    let key = ModelKey::new(TTT_STREAM, Uuid::new_v4().to_string());
+    let key = ModelKey::new(TTT_STREAM, Uuid::new_v4());
 
     repo_state
         .add_command(&key, TTTCommand::Create, None)

@@ -1,3 +1,6 @@
+//! the repository mod is where the heavy lifting occurs
+//! read / write to the db, play event, add command ...
+
 use std::cmp::Ordering;
 use std::fmt::Debug;
 use std::marker::PhantomData;
@@ -17,6 +20,9 @@ use crate::model_key::ModelKey;
 use crate::{Dto, EventSourceError, EventSourceStateError};
 use crate::{State, Stream};
 
+/// the `DtoRepository` is the reading part of the event storage
+/// multiple `DtoRepository` can listen to the event stream but produce
+/// different model.
 #[derive(Clone)]
 #[allow(clippy::module_name_repetitions)]
 pub struct DtoRepository<D, C>
@@ -29,6 +35,9 @@ where
     dto: PhantomData<D>,
 }
 
+/// the `StateRepository` is the central piece of the project
+/// the update are done with Command on State
+/// and the query are done by recomputing all event or reading the `CacheDB`
 #[derive(Clone)]
 #[allow(clippy::module_name_repetitions)]
 pub struct StateRepository<S, C>
@@ -41,6 +50,7 @@ where
     state: PhantomData<S>,
 }
 
+/// `ModelWithPosition` is a helper to add the position to any model
 #[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct ModelWithPosition<M> {
     position: Option<u64>,
@@ -51,29 +61,41 @@ impl<M> ModelWithPosition<M>
 where
     M: Dto,
 {
+    /// get the current state
     pub const fn state(&self) -> &M {
         &self.model
     }
 
+    /// play one event to the current model to compute the next
     pub fn play_event(&mut self, event: &M::Event, position: Option<u64>) {
         self.model.play_event(event);
 
         self.position = position;
     }
 
+    /// the position is the number of event in the event store
+    /// `None` indicate that the topic is empty
     pub const fn position(&self) -> Option<u64> {
         self.position
     }
 }
 
+#[allow(missing_docs)]
 #[async_trait]
+/// the trait `Repository` allow to reconstruct the `Dto` from the `EventDb`
 pub trait Repository<D, C>: Clone + Send
 where
     D: Dto,
     C: CacheDb<D>,
 {
+    /// A repository only need the `EventDb` and a cache,
+    /// the type system take care of everything else.
     fn new(event_db: EventDb, cache_db: C) -> Self;
+
+    /// Getter for the `EventDb`
     fn event_db(&self) -> &EventDb;
+
+    /// Getter for the cache
     fn cache_db(&self) -> &C;
 
     async fn get_model(&self, key: &ModelKey) -> Result<ModelWithPosition<D>, EventSourceError>
@@ -161,7 +183,11 @@ where
             let metadata: Metadata = serde_json::from_slice(event.custom_metadata.as_ref())
                 .map_err(EventSourceError::Serde)?;
 
-            let model_key: ModelKey = event.stream_id.as_str().into();
+            let model_key: ModelKey = event
+                .stream_id
+                .as_str()
+                .try_into()
+                .map_err(EventSourceError::Uuid)?;
 
             let mut model = self
                 .cache_db()
@@ -347,7 +373,7 @@ where
         );
 
         let command_metadata = CompleteEvent::from_command(command, previous_metadata)
-            .map_err(|e| EventSourceStateError::EventSourceError(EventSourceError::Metadata(e)))?;
+            .map_err(|e| EventSourceStateError::EventSourceError(EventSourceError::Serde(e)))?;
 
         let mut events_data = vec![command_metadata.clone()];
 
@@ -356,10 +382,8 @@ where
         let res_events = events.clone();
 
         for event in events {
-            let event_metadata =
-                CompleteEvent::from_event(event, &previous_metadata).map_err(|e| {
-                    EventSourceStateError::EventSourceError(EventSourceError::Metadata(e))
-                })?;
+            let event_metadata = CompleteEvent::from_event(event, &previous_metadata)
+                .map_err(|e| EventSourceStateError::EventSourceError(EventSourceError::Serde(e)))?;
 
             events_data.push(event_metadata.clone());
             event_metadata.metadata().clone_into(&mut previous_metadata);
@@ -387,7 +411,7 @@ where
             .filter_map(|e| match e.full_event_data() {
                 Ok(event) => Some(event),
                 Err(e) => {
-                    err = Err(EventSourceError::Metadata(e));
+                    err = Err(EventSourceError::Serde(e));
                     None
                 }
             })

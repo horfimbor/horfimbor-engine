@@ -1,3 +1,6 @@
+#![deny(missing_docs)]
+#![doc = include_str!("../README.md")]
+
 use proc_macro::{self, TokenStream};
 
 use convert_case::{Case, Casing};
@@ -14,6 +17,8 @@ macro_rules! derive_error {
     };
 }
 
+/// `derive_command` generate the boilerplate to get the `CommandName` from the command enum
+/// the attribute `state` give the prefix for the name
 #[proc_macro_derive(Command, attributes(state))]
 pub fn derive_command(input: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
@@ -97,6 +102,9 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
     output.into()
 }
 
+/// `derive_event` generate the boilerplate to get the `EventName` from the event enum
+/// the attribute `state` give the prefix for the name
+/// unless the attribute `composite_state` in which case the current enum level is skip
 #[proc_macro_derive(Event, attributes(state, composite_state))]
 pub fn derive_event(input: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
