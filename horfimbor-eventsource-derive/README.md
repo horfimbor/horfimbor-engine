@@ -1,3 +1,3 @@
 # Horfimbor eventsource derive
 
-macro for https://crates.io/crates/horfimbor-eventsource
+macro for [horfimbor-eventsource](https://crates.io/crates/horfimbor-eventsource)

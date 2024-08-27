@@ -56,7 +56,7 @@ async fn with_cache() {
         EasyRedisCache::new(redis_client.clone()),
     );
 
-    let key = ModelKey::new(&NAME, Uuid::new_v4().to_string());
+    let key = ModelKey::new(&NAME, Uuid::new_v4());
 
     let model = repo.get_model(&key).await.unwrap();
 

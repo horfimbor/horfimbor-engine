@@ -1,3 +1,5 @@
+//! Redis implementation of the `CacheDb`
+
 use std::marker::PhantomData;
 
 use redis::{Client, Commands};
@@ -6,6 +8,7 @@ use crate::cache_db::{CacheDb, DbError};
 use crate::model_key::ModelKey;
 use crate::Dto;
 
+/// The `StateDb` is a container for the Type system and a db connection
 #[derive(Clone)]
 pub struct StateDb<S> {
     client: Client,
@@ -13,6 +16,7 @@ pub struct StateDb<S> {
 }
 
 impl<S> StateDb<S> {
+    /// simple constructor
     #[must_use]
     pub const fn new(client: Client) -> Self {
         Self {
