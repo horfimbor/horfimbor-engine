@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.2.2...horfimbor-eventsource-v0.3.0) - 2024-08-27
+
+### Other
+- add doc ([#45](https://github.com/horfimbor/horfimbor-engine/pull/45))
+- Add time ([#42](https://github.com/horfimbor/horfimbor-engine/pull/42))
+- add cargo machete to CI ([#41](https://github.com/horfimbor/horfimbor-engine/pull/41))
+- move error from dto to state ([#40](https://github.com/horfimbor/horfimbor-engine/pull/40))
+- move subscription out of dto ([#39](https://github.com/horfimbor/horfimbor-engine/pull/39))
+- allow event composition to allow the use of public events ([#37](https://github.com/horfimbor/horfimbor-engine/pull/37))
+
 ## [0.2.2](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.2.1...horfimbor-eventsource-v0.2.2) - 2024-08-09
 
 ### Other
