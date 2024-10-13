@@ -250,7 +250,7 @@ where
     ///
     /// Will return `Err` if input is not in the format `index@stream_id`
     fn split_event_id(str: &str) -> Result<(&str, &str), EventSourceError> {
-        let mut iter = str.split(|c| c == '@');
+        let mut iter = str.split('@');
 
         if let (Some(index), Some(stream_id)) = (iter.next(), iter.next()) {
             return Ok((index, stream_id));
@@ -316,7 +316,7 @@ where
         key: &ModelKey,
         command: S::Command,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<S, EventSourceStateError<S::Error>>
+    ) -> Result<S, EventSourceStateError>
     where
         S: State,
     {
@@ -349,7 +349,7 @@ where
         key: &ModelKey,
         command: S::Command,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<(S, Vec<S::Event>, bool), EventSourceStateError<S::Error>>
+    ) -> Result<(S, Vec<S::Event>, bool), EventSourceStateError>
     where
         S: State + Sync,
     {
@@ -362,7 +362,7 @@ where
 
         let events = state
             .try_command(command.clone())
-            .map_err(EventSourceStateError::State)?;
+            .map_err(|e| EventSourceStateError::State(format!("{e}")))?;
 
         let options = model.position.map_or_else(
             || AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream),
@@ -401,7 +401,7 @@ where
         key: &ModelKey,
         options: &AppendToStreamOptions,
         events_with_data: Vec<CompleteEvent>,
-    ) -> Result<bool, EventSourceStateError<S::Error>>
+    ) -> Result<bool, EventSourceStateError>
     where
         S: State,
     {

@@ -62,36 +62,36 @@ impl Display for Stream {
 pub enum EventSourceError {
     /// the cache is gone ?
     #[error("Cache error")]
-    CacheDbError(DbError),
+    CacheDbError(#[from] DbError),
 
     /// the db is gone ?
     #[error("Event store error")]
-    EventStore(EventStoreError),
+    EventStore(#[from] EventStoreError),
 
     /// Bad position can append when race condition occur
     /// this error is retryable
-    #[error("Event store postion error")]
+    #[error("Event store position error : {0}")]
     Position(String),
 
     /// Error for serialization
     #[error("Serde error")]
-    Serde(SerdeError),
+    Serde(#[from] SerdeError),
 
     /// Error when converting uuid
     #[error("Uuid error")]
-    Uuid(UuidError),
+    Uuid(#[from] UuidError),
 }
 
 /// error coming from the `StateRepository`
 #[derive(Error, Debug)]
-pub enum EventSourceStateError<S> {
+pub enum EventSourceStateError {
     /// error from `EventSourceError`
     #[error("Event source error")]
-    EventSourceError(EventSourceError),
+    EventSourceError(#[from] EventSourceError),
 
     /// error depending on the `State`
-    #[error("State error")]
-    State(S),
+    #[error("State error : {0}")]
+    State(String),
 }
 
 /// str wrapper
