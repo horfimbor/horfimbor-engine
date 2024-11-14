@@ -129,7 +129,7 @@ impl CompleteEvent {
         previous_metadata: Option<&Metadata>,
         is_event: bool,
     ) -> Self {
-        let id = Uuid::new_v4();
+        let id = Uuid::now_v7();
 
         event_data = event_data.id(id);
 

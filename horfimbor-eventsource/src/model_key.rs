@@ -4,6 +4,8 @@ use crate::StreamName;
 use serde::{Deserialize, Serialize};
 use uuid::{Error as UuidError, Uuid};
 
+use sha1::{Digest, Sha1};
+
 /// container for the entity key
 #[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
 pub struct ModelKey {
@@ -23,6 +25,22 @@ impl ModelKey {
             stream_name: name,
             stream_id,
         }
+    }
+
+    /// the model key is created for a UUID created from external data
+    #[must_use]
+    pub fn new_uuid_v8(stream_name: StreamName, kind: &'static str, data: &str) -> Self {
+        let mut hasher = Sha1::new();
+        hasher.update(kind);
+        hasher.update(data);
+        let hash = hasher.finalize();
+        let result = hash.as_slice();
+
+        let mut bytes = [0; 16];
+        bytes.copy_from_slice(&result[..16]);
+
+        let stream_id = Uuid::new_v8(bytes);
+        Self::new(stream_name, stream_id)
     }
 
     /// the main purpose of the `ModelKey` is to provide this string.
