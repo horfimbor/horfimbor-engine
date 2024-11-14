@@ -102,7 +102,9 @@ pub fn derive_command(input: TokenStream) -> TokenStream {
     output.into()
 }
 
-/// `derive_event` generate the boilerplate to get the `EventName` from the event enum
+/// `derive_event` generate the boilerplate to get the `EventName`
+///
+/// it generates it from the event enum :
 /// the attribute `state` give the prefix for the name
 /// unless the attribute `composite_state` in which case the current enum level is skip
 #[proc_macro_derive(Event, attributes(state, composite_state))]
