@@ -2,12 +2,13 @@
 
 use crate::StreamName;
 use serde::{Deserialize, Serialize};
-use uuid::{Error as UuidError, Uuid};
+use std::fmt::{Display, Formatter};
+use uuid::{Error as UuidError, Timestamp, Uuid};
 
 use sha1::{Digest, Sha1};
 
 /// container for the entity key
-#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Default)]
 pub struct ModelKey {
     stream_name: String,
     stream_id: Uuid,
@@ -21,6 +22,30 @@ impl ModelKey {
     pub fn new(stream_name: StreamName, stream_id: Uuid) -> Self {
         // maybe replace with an error ?
         let name = stream_name.replace('-', "_");
+        Self {
+            stream_name: name,
+            stream_id,
+        }
+    }
+
+    /// the model key is created with an uuid v4, to use only to create a new entity
+    #[must_use]
+    pub fn new_uuid_v4(stream_name: StreamName) -> Self {
+        // maybe replace with an error ?
+        let name = stream_name.replace('-', "_");
+        let stream_id = Uuid::new_v4();
+        Self {
+            stream_name: name,
+            stream_id,
+        }
+    }
+
+    /// the model key is created with an uuid v7, to use only to create a new entity
+    #[must_use]
+    pub fn new_uuid_v7(stream_name: StreamName) -> Self {
+        // maybe replace with an error ?
+        let name = stream_name.replace('-', "_");
+        let stream_id = Uuid::now_v7();
         Self {
             stream_name: name,
             stream_id,
@@ -62,6 +87,12 @@ impl TryFrom<&str> for ModelKey {
             stream_name: stream_name.to_string(),
             stream_id,
         })
+    }
+}
+
+impl Display for ModelKey {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}-{}", self.stream_name, self.stream_id)
     }
 }
 
