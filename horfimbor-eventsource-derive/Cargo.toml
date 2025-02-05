@@ -14,7 +14,7 @@ categories = ["development-tools::procedural-macro-helpers"]
 proc-macro2 = "1.0"
 syn = { version = "2.0", features = ["full"] }
 quote = "1.0"
-convert_case="0.6"
+convert_case="0.7"
 
 [lib]
 proc-macro = true

@@ -4,7 +4,7 @@ extern crate lazy_static;
 use std::time::Duration;
 
 use eventstore::Client as EventClient;
-use rand::distributions::Alphanumeric;
+use rand::distr::Alphanumeric;
 use rand::Rng;
 use redis::Commands;
 use tokio::time::sleep;
@@ -26,7 +26,7 @@ type EasyRedisCache = StateDb<PokeState>;
 
 lazy_static! {
     static ref NAME: &'static str = {
-        let name: String = rand::thread_rng()
+        let name: String = rand::rng()
             .sample_iter(&Alphanumeric)
             .take(7)
             .map(char::from)
