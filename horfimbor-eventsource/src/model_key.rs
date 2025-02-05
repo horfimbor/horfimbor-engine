@@ -3,7 +3,7 @@
 use crate::StreamName;
 use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
-use uuid::{Error as UuidError, Timestamp, Uuid};
+use uuid::{Error as UuidError, Uuid};
 
 use sha1::{Digest, Sha1};
 
