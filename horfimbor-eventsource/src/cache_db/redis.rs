@@ -50,7 +50,7 @@ where
             .map_err(|e| DbError::Disconnect(e.to_string()))?;
 
         connection
-            .set(key.format(), state)
+            .set::<_, _, ()>(key.format(), state)
             .map_err(|err| DbError::Internal(err.to_string()))?;
 
         Ok(())

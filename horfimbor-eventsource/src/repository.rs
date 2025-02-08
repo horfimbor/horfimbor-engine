@@ -372,7 +372,7 @@ where
             },
         );
 
-        let command_metadata = CompleteEvent::from_command(command, previous_metadata)
+        let command_metadata = CompleteEvent::from_command(&command, previous_metadata)
             .map_err(|e| EventSourceStateError::EventSourceError(EventSourceError::Serde(e)))?;
 
         let mut events_data = vec![command_metadata.clone()];
@@ -382,7 +382,7 @@ where
         let res_events = events.clone();
 
         for event in events {
-            let event_metadata = CompleteEvent::from_event(event, &previous_metadata)
+            let event_metadata = CompleteEvent::from_event(&event, &previous_metadata)
                 .map_err(|e| EventSourceStateError::EventSourceError(EventSourceError::Serde(e)))?;
 
             events_data.push(event_metadata.clone());

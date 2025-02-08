@@ -97,13 +97,13 @@ impl CompleteEvent {
     ///
     /// Will return `Err` if `Metadata` cannot be de into json
     pub fn from_command<C>(
-        command: C,
+        command: &C,
         previous_metadata: Option<&Metadata>,
     ) -> Result<Self, SerdeError>
     where
         C: Command,
     {
-        let event_data = EventData::json(command.command_name(), command)?;
+        let event_data = EventData::json(command.command_name(), &command)?;
 
         Ok(Self::from_event_data(event_data, previous_metadata, false))
     }
@@ -111,11 +111,11 @@ impl CompleteEvent {
     /// # Errors
     ///
     /// Will return `Err` if `Metadata` cannot be serialized into json
-    pub fn from_event<E>(event: E, previous_metadata: &Metadata) -> Result<Self, SerdeError>
+    pub fn from_event<E>(event: &E, previous_metadata: &Metadata) -> Result<Self, SerdeError>
     where
         E: Event,
     {
-        let event_data = EventData::json(event.event_name(), event)?;
+        let event_data = EventData::json(event.event_name(), &event)?;
 
         Ok(Self::from_event_data(
             event_data,
