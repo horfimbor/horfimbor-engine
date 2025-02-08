@@ -6,6 +6,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.3.0...horfimbor-eventsource-v0.3.1) - 2025-02-08
+
+### Added
+
+- add helper function on ModelKey (#49)
+- replace uuid_v4 by uuid_v7 and allow to create model_key with uuid_v8 (#48)
+
+### Fixed
+
+- display of error was missing (#46)
+
+### Other
+
+- *(deps)* upgrade eventstore (#51)
+- *(deps)* upgrade dependencies (#50)
+
 ## [0.3.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.2.2...horfimbor-eventsource-v0.3.0) - 2024-08-27
 
 ### Other

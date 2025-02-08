@@ -6,6 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-derive-v0.1.5...horfimbor-eventsource-derive-v0.1.6) - 2025-02-08
+
+### Added
+
+- replace uuid_v4 by uuid_v7 and allow to create model_key with uuid_v8 (#48)
+
+### Other
+
+- *(deps)* upgrade dependencies (#50)
+
 ## [0.1.5](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-derive-v0.1.4...horfimbor-eventsource-derive-v0.1.5) - 2024-08-27
 
 ### Other

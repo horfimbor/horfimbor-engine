@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-time-v0.2.0...horfimbor-time-v0.2.1) - 2025-02-08
+
+### Other
+
+- update Cargo.toml dependencies
+
 ## [0.2.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-time-v0.1.0...horfimbor-time-v0.2.0) - 2024-08-27
 
 ### Other
