@@ -8,7 +8,7 @@ use uuid::{Error as UuidError, Uuid};
 use sha1::{Digest, Sha1};
 
 /// container for the entity key
-#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Default, Hash)]
 pub struct ModelKey {
     stream_name: String,
     stream_id: Uuid,
