@@ -3,10 +3,10 @@ default: precommit
 precommit: test clippy
     cargo fmt
 
-start:
+dc-start:
     docker compose up -d
 
-stop:
+dc-stop:
     docker compose down
 
 test:
