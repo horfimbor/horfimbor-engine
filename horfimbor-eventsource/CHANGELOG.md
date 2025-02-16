@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.3.1...horfimbor-eventsource-v0.3.2) - 2025-02-16
+
+### Other
+
+- update redis to 0.29 (#54)
+- allow ModelKey to be the key of a hashmap (#52)
+
 ## [0.3.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.3.0...horfimbor-eventsource-v0.3.1) - 2025-02-08
 
 ### Added
