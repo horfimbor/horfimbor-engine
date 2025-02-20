@@ -7,8 +7,8 @@ use std::fmt::{Debug, Display, Formatter};
 use eventstore::Error as EventStoreError;
 /// re-export import :
 pub use horfimbor_eventsource_derive;
-use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde::de::DeserializeOwned;
 use serde_json::Error as SerdeError;
 use thiserror::Error;
 use uuid::{Error as UuidError, Uuid};

@@ -7,7 +7,7 @@ use convert_case::{Case, Casing};
 use proc_macro2::{Ident, Span, TokenStream as TokenStream2};
 use quote::{quote, quote_spanned};
 use syn::spanned::Spanned;
-use syn::{parse_macro_input, Data, DeriveInput, Error, Fields};
+use syn::{Data, DeriveInput, Error, Fields, parse_macro_input};
 
 macro_rules! derive_error {
     ($string: tt) => {
@@ -149,7 +149,7 @@ pub fn derive_event(input: TokenStream) -> TokenStream {
                         _ => {
                             return derive_error!(
                                 "composite variants can only have one unnamed fields "
-                            )
+                            );
                         }
                     };
 

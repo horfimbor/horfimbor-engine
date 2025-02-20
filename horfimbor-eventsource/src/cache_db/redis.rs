@@ -4,9 +4,9 @@ use std::marker::PhantomData;
 
 use redis::{Client, Commands};
 
+use crate::Dto;
 use crate::cache_db::{CacheDb, DbError};
 use crate::model_key::ModelKey;
-use crate::Dto;
 
 /// The `StateDb` is a container for the Type system and a db connection
 #[derive(Clone)]
