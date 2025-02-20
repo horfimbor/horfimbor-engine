@@ -4,17 +4,17 @@ extern crate lazy_static;
 use std::time::Duration;
 
 use eventstore::Client as EventClient;
-use rand::distr::Alphanumeric;
 use rand::Rng;
+use rand::distr::Alphanumeric;
 use redis::Commands;
 use tokio::time::sleep;
 use uuid::Uuid;
 
+use horfimbor_eventsource::Stream;
 use horfimbor_eventsource::cache_db::redis::StateDb;
 use horfimbor_eventsource::model_key::ModelKey;
 use horfimbor_eventsource::repository::Repository;
 use horfimbor_eventsource::repository::StateRepository;
-use horfimbor_eventsource::Stream;
 
 use crate::state_db::{PokeCommand, PokeState};
 

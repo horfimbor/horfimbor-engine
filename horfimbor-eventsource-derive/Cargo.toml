@@ -1,7 +1,7 @@
 [package]
 name = "horfimbor-eventsource-derive"
 version = "0.1.6"
-edition = "2021"
+edition = "2024"
 description = "derive macro for horfimbor-eventsource"
 repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"

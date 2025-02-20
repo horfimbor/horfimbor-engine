@@ -4,9 +4,9 @@ use std::marker::PhantomData;
 
 use thiserror::Error;
 
+use crate::Dto;
 use crate::model_key::ModelKey;
 use crate::repository::ModelWithPosition;
-use crate::Dto;
 
 #[cfg(feature = "cache-redis")]
 pub mod redis;

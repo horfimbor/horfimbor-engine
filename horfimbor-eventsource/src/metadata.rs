@@ -35,7 +35,7 @@ impl Metadata {
     }
 
     /// id can be set afterward
-    pub fn set_id(&mut self, id: Option<Uuid>) {
+    pub const fn set_id(&mut self, id: Option<Uuid>) {
         self.id = id;
     }
 
