@@ -1,12 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
+    "horfimbor-jwt",
     "horfimbor-eventsource",
     "horfimbor-eventsource-derive",
-    "horfimbor-time"]
+    "horfimbor-time"
+]
 
 [workspace.dependencies]
 thiserror = "2.0"
+uuid = { version = "1.1", features = ["v7", "v8", "serde"] }
+
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
