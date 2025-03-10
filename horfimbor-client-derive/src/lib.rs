@@ -12,13 +12,14 @@ macro_rules! derive_error {
     };
 }
 
+#[allow(clippy::too_many_lines)]
 #[proc_macro_derive(WebComponent, attributes(component, optionnal))]
 pub fn derive_web_component(input: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
 
     let attrs = &input.attrs;
 
-    let Some(component) = attrs.iter().find(|attr| attr.path().is_ident("component")) else{
+    let Some(component) = attrs.iter().find(|attr| attr.path().is_ident("component")) else {
         return derive_error!("WebComponent need a base component");
     };
 
@@ -46,12 +47,25 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
                     break;
                 };
                 let kind = &field.ty;
-                let attribute_html = format!("{ident}").replace("_", "-");
+                let attribute_html = format!("{ident}").replace('_', "-");
 
                 let attrs = &field.attrs;
 
-                if attrs.iter().find(|a| a.path().is_ident("optionnal")).is_none(){
+                if attrs.iter().any(|a| a.path().is_ident("optionnal")) {
+                    opt_struct.extend(quote! {
+                        #ident : #kind,
+                    });
 
+                    check_none.extend(quote! {
+                        let #ident = match ctx.props().#ident.clone(){
+                            None => None,
+                            Some(s) => {
+                                if s.is_empty(){ None }
+                                else{ Some(s) }
+                            }
+                        };
+                    });
+                } else {
                     opt_struct.extend(quote! {
                         #ident : Option<#kind>,
                     });
@@ -60,14 +74,9 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
                         let Some(#ident) = ctx.props().#ident.clone() else{
                             return html!();
                         };
-                    });
-                }else{
-                    opt_struct.extend(quote! {
-                        #ident : #kind,
-                    });
-
-                    check_none.extend(quote! {
-                        let #ident = ctx.props().#ident.clone();
+                        if #ident.is_empty() {
+                            return html!();
+                        }
                     });
                 }
                 default_props.extend(quote! {
@@ -159,7 +168,6 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
                     let props = #name {
                         #get_attributes
                     };
-
                     match &mut self.content {
                         None => {}
                         Some(handle) => {
