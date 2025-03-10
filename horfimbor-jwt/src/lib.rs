@@ -48,50 +48,63 @@ pub enum ClaimError {
 }
 
 impl Claims {
+    /// parse the token, validate the secrets, audience and issuer
+    ///
+    /// # Errors
+    ///
+    /// Will return `ClaimError` if the decoding failed
     pub fn from_jwt(
         token: &str,
         secret: &str,
-        audience: String,
-        issuer: String,
-    ) -> Result<Claims, ClaimError> {
+        audience: &str,
+        issuer: &str,
+    ) -> Result<Self, ClaimError> {
         let mut val = Validation::default();
         val.set_audience(&[&audience]);
         val.set_issuer(&[&issuer]);
         val.set_required_spec_claims(&["exp", "iss", "aud"]);
 
-        let value = decode::<Claims>(token, &DecodingKey::from_secret(secret.as_ref()), &val)
-            .map_err(|e| ClaimError::JWT(e))?;
+        let value = decode::<Self>(token, &DecodingKey::from_secret(secret.as_ref()), &val)
+            .map_err(ClaimError::JWT)?;
 
         Ok(value.claims)
     }
 
+    #[must_use]
     pub fn audience(&self) -> &str {
         &self.audience
     }
 
-    pub fn expiration_at(&self) -> u64 {
+    #[must_use]
+    pub const fn expiration_at(&self) -> u64 {
         self.expiration_at
     }
 
-    pub fn issued_at(&self) -> u64 {
+    #[must_use]
+    pub const fn issued_at(&self) -> u64 {
         self.issued_at
     }
 
+    #[must_use]
     pub fn issuer(&self) -> &str {
         &self.issuer
     }
 
-    pub fn user(&self) -> &ModelKey {
+    #[must_use]
+    pub const fn user(&self) -> &ModelKey {
         &self.user
     }
 
-    pub fn roles(&self) -> &Role {
+    #[must_use]
+    pub const fn roles(&self) -> &Role {
         &self.roles
     }
 
-    pub fn account(&self) -> &ModelKey {
+    #[must_use]
+    pub const fn account(&self) -> &ModelKey {
         &self.account
     }
+    #[must_use]
     pub fn account_name(&self) -> &str {
         &self.account_name
     }
@@ -123,8 +136,7 @@ mod tests {
 
         let token = cb.build("SOME_SECRET").unwrap();
 
-        let claim =
-            Claims::from_jwt(&token, secret, audience.to_string(), issuer.to_string()).unwrap();
+        let claim = Claims::from_jwt(&token, secret, audience, issuer).unwrap();
 
         assert_eq!(user, claim.user);
         assert_eq!(account, claim.account);

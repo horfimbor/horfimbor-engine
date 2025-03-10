@@ -1,7 +1,7 @@
-use horfimbor_eventsource::model_key::ModelKey;
 use crate::{ClaimError, Claims, Role};
+use horfimbor_eventsource::model_key::ModelKey;
 
-use jsonwebtoken::{encode, get_current_timestamp, EncodingKey, Header};
+use jsonwebtoken::{EncodingKey, Header, encode, get_current_timestamp};
 
 pub struct ClaimBuilder {
     check_part: CheckPart,
@@ -23,6 +23,7 @@ struct AppPart {
 }
 
 impl ClaimBuilder {
+    #[must_use]
     pub fn new(duration: u64, audience: String, issuer: String) -> Self {
         let since_the_epoch = get_current_timestamp();
 
@@ -39,22 +40,36 @@ impl ClaimBuilder {
         }
     }
 
-    pub fn set_account(&mut self, user: ModelKey, account: ModelKey,account_name: String , roles: Role) {
+    pub fn set_account(
+        &mut self,
+        user: ModelKey,
+        account: ModelKey,
+        account_name: String,
+        roles: Role,
+    ) {
         let app_part = AppPart {
             user,
             account,
             account_name,
             roles,
         };
-        self.app_part = Some(app_part)
+        self.app_part = Some(app_part);
     }
 
-    pub fn build(self, secret: &str) ->  Result<String, ClaimError> {
+    /// build the claims into a String
+    ///
+    /// # Errors
+    ///
+    /// Will return `ClaimError` if any part is missing or the encoding failed.
+    pub fn build(self, secret: &str) -> Result<String, ClaimError> {
         let (user, account, account_name, roles) = match self.app_part {
-            None => {
-                return Err(ClaimError::EmptyAccount)
-            },
-            Some(app_part) => (app_part.user, app_part.account, app_part.account_name, app_part.roles),
+            None => return Err(ClaimError::EmptyAccount),
+            Some(app_part) => (
+                app_part.user,
+                app_part.account,
+                app_part.account_name,
+                app_part.roles,
+            ),
         };
 
         let claim = Claims {
@@ -73,6 +88,6 @@ impl ClaimBuilder {
             &claim,
             &EncodingKey::from_secret(secret.as_ref()),
         )
-            .map_err(|e| ClaimError::JWT(e))
+        .map_err(ClaimError::JWT)
     }
 }
