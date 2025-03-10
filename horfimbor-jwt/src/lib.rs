@@ -1,3 +1,6 @@
+// #![deny(missing_docs)]
+// #![doc = include_str!("../README.md")]
+
 pub mod builder;
 
 use horfimbor_eventsource::model_key::ModelKey;
