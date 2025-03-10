@@ -12,7 +12,7 @@ macro_rules! derive_error {
     };
 }
 
-#[proc_macro_derive(WebComponent, attributes(component))]
+#[proc_macro_derive(WebComponent, attributes(component, optionnal))]
 pub fn derive_web_component(input: TokenStream) -> TokenStream {
     let input: DeriveInput = parse_macro_input!(input as DeriveInput);
 
@@ -41,32 +41,43 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
 
     match data {
         Data::Struct(data_struct) => {
-            for attr in &data_struct.fields {
-                let Some(ident) = &attr.ident else {
+            for field in &data_struct.fields {
+                let Some(ident) = &field.ident else {
                     break;
                 };
-                let kind = &attr.ty;
+                let kind = &field.ty;
+                let attribute_html = format!("{ident}").replace("_", "-");
 
-                opt_struct.extend(quote! {
-                    #ident : Option<#kind>,
-                });
+                let attrs = &field.attrs;
 
+                if attrs.iter().find(|a| a.path().is_ident("optionnal")).is_none(){
+
+                    opt_struct.extend(quote! {
+                        #ident : Option<#kind>,
+                    });
+
+                    check_none.extend(quote! {
+                        let Some(#ident) = ctx.props().#ident.clone() else{
+                            return html!();
+                        };
+                    });
+                }else{
+                    opt_struct.extend(quote! {
+                        #ident : #kind,
+                    });
+
+                    check_none.extend(quote! {
+                        let #ident = ctx.props().#ident.clone();
+                    });
+                }
                 default_props.extend(quote! {
-                    #ident : None,
+                    #ident : this.get_attribute(#attribute_html),
                 });
-
-                let s = format!("{ident}");
                 observed.extend(quote! {
-                    #s,
+                    #attribute_html,
                 });
-
                 get_attributes.extend(quote! {
-                    #ident: this.get_attribute(#s),
-                });
-                check_none.extend(quote! {
-                    let Some(#ident) = ctx.props().#ident.clone() else{
-                        return html!();
-                    };
+                    #ident: this.get_attribute(#attribute_html),
                 });
                 real_props.extend(quote! {
                     #ident={{#ident.clone()}}
@@ -98,6 +109,10 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
 
                 fn create(_ctx: &Context<Self>) -> Self {
                     Self {}
+                }
+
+                fn changed(&mut self, _ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+                    true
                 }
 
                 fn view(&self, ctx: &Context<Self>) -> Html {
@@ -137,9 +152,9 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
                 fn attribute_changed_callback(
                     &mut self,
                     this: &HtmlElement,
-                    _name: String,
-                    _old_value: Option<String>,
-                    _new_value: Option<String>,
+                    name: String,
+                    old_value: Option<String>,
+                    new_value: Option<String>,
                 ) {
                     let props = #name {
                         #get_attributes
