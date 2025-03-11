@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-client-derive-v0.1.0...horfimbor-client-derive-v0.1.1) - 2025-03-11
+
+### Other
+
+- release ([#56](https://github.com/horfimbor/horfimbor-engine/pull/56))
+
 ## [0.1.0](https://github.com/horfimbor/horfimbor-engine/releases/tag/horfimbor-client-derive-v0.1.0) - 2025-03-10
 
 ### Other
