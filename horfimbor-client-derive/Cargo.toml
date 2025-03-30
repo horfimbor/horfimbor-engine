@@ -1,6 +1,6 @@
 [package]
 name = "horfimbor-client-derive"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "derive macro for yew and custom-elements"
 repository = "https://github.com/horfimbor/horfimbor-client-derive"

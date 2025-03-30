@@ -1,6 +1,6 @@
 [package]
 name = "horfimbor-jwt"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Jwt handler for the game engine Horfimbor"
 repository = "https://github.com/horfimbor/horfimbor-jwt"
@@ -11,7 +11,7 @@ keywords = ["jwt"]
 jsonwebtoken = "9.3"
 serde = { version = "1.0", features = ["derive"] }
 thiserror = { workspace = true }
-horfimbor-eventsource = { version = "0.3.3", path = "../horfimbor-eventsource" }
+horfimbor-eventsource = { version = "0.3.4", path = "../horfimbor-eventsource" }
 
 [lints]
 workspace = true
