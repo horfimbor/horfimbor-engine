@@ -180,9 +180,6 @@ where
                 Some(event) => event,
             };
 
-            let metadata: Metadata = serde_json::from_slice(event.custom_metadata.as_ref())
-                .map_err(EventSourceError::Serde)?;
-
             let model_key: ModelKey = event
                 .stream_id
                 .as_str()
@@ -203,7 +200,7 @@ where
             } else {
                 model
                     .position
-                    .map_or(Ordering::Less, |pos| pos.cmp(&(event.revision - 1)))
+                    .map_or(Ordering::Less, |pos| pos.cmp(&(event.revision)))
             };
 
             match ordering {
@@ -211,27 +208,14 @@ where
                     model = self.complete_from_es(&model_key, &model).await?;
                     dbg!(format!(
                         "cache have been completed from {:?} to {:?}",
-                        model.position, event.revision,
+                        event.revision, model.position,
                     ));
 
                     self.cache_db()
                         .set(&model_key, model)
                         .map_err(EventSourceError::CacheDbError)?;
                 }
-                Ordering::Equal => {
-                    if metadata.is_event() {
-                        let dto_event = event
-                            .as_json::<D::Event>()
-                            .map_err(EventSourceError::Serde)?;
-
-                        model.play_event(&dto_event, Some(event.revision));
-                    } else {
-                        model.position = Some(event.revision);
-                    }
-                    self.cache_db()
-                        .set(&model_key, model)
-                        .map_err(EventSourceError::CacheDbError)?;
-                }
+                Ordering::Equal => {}
                 Ordering::Greater => {
                     dbg!(format!(
                         "cache should be lower than {} but is : {:?}",
