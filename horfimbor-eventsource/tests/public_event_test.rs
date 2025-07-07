@@ -1,12 +1,12 @@
 use crate::with_public::public::Player::Circle;
 use crate::with_public::public::{TTT_PUB, TTT_STREAM, TTTEvents, Victory};
 use crate::with_public::{TTTCommand, TTTState};
-use eventstore::Client as EventClient;
 use horfimbor_eventsource::Stream;
 use horfimbor_eventsource::cache_db::NoCache;
 use horfimbor_eventsource::helper::get_persistent_subscription;
 use horfimbor_eventsource::model_key::ModelKey;
 use horfimbor_eventsource::repository::{Repository, StateRepository};
+use kurrentdb::Client as EventClient;
 use std::time::Duration;
 use tokio::time::sleep;
 use uuid::Uuid;
@@ -55,7 +55,7 @@ async fn test_with_public_event() {
                 }
             }
 
-            sub.ack(rcv_event).await.expect("cannot ack the event");
+            sub.ack(&rcv_event).await.expect("cannot ack the event");
 
             dbg!(nb);
         }

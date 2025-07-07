@@ -6,9 +6,9 @@ use std::fmt::Debug;
 use std::marker::PhantomData;
 
 use async_trait::async_trait;
-use eventstore::{
-    AppendToStreamOptions, Client as EventDb, Error, EventData, ExpectedRevision,
-    ReadStreamOptions, StreamPosition, SubscribeToPersistentSubscriptionOptions,
+use kurrentdb::{
+    AppendToStreamOptions, Client as EventDb, Error, EventData, ReadStreamOptions, StreamPosition,
+    StreamState, SubscribeToPersistentSubscriptionOptions,
 };
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
@@ -181,8 +181,7 @@ where
             };
 
             let model_key: ModelKey = event
-                .stream_id
-                .as_str()
+                .stream_id()
                 .try_into()
                 .map_err(EventSourceError::Uuid)?;
 
@@ -224,7 +223,7 @@ where
                 }
             }
 
-            sub.ack(rcv_event)
+            sub.ack(&rcv_event)
                 .await
                 .map_err(EventSourceError::EventStore)?;
         }
@@ -349,10 +348,9 @@ where
             .map_err(|e| EventSourceStateError::State(format!("{e}")))?;
 
         let options = model.position.map_or_else(
-            || AppendToStreamOptions::default().expected_revision(ExpectedRevision::NoStream),
+            || AppendToStreamOptions::default().stream_state(StreamState::NoStream),
             |position| {
-                AppendToStreamOptions::default()
-                    .expected_revision(ExpectedRevision::Exact(position))
+                AppendToStreamOptions::default().stream_state(StreamState::StreamRevision(position))
             },
         );
 

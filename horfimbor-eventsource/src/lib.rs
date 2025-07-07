@@ -4,9 +4,9 @@
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-use eventstore::Error as EventStoreError;
 /// re-export import :
 pub use horfimbor_eventsource_derive;
+use kurrentdb::Error as EventStoreError;
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Error as SerdeError;

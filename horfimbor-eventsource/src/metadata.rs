@@ -1,6 +1,6 @@
 //! common metadata for all the events and command
 
-use eventstore::EventData;
+use kurrentdb::EventData;
 use serde::{Deserialize, Serialize};
 use serde_json::Error as SerdeError;
 use uuid::Uuid;

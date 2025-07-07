@@ -6,6 +6,7 @@ description = "Jwt handler for the game engine Horfimbor"
 repository = "https://github.com/horfimbor/horfimbor-jwt"
 license-file = "LICENSE"
 keywords = ["jwt"]
+categories = ["authentication"]
 
 [dependencies]
 jsonwebtoken = "9.3"

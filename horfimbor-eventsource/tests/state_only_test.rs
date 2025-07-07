@@ -1,8 +1,8 @@
 use std::thread;
 use std::time::Duration;
 
-use eventstore::Client as EventClient;
 use futures::executor::block_on;
+use kurrentdb::Client as EventClient;
 use tokio::time::sleep;
 use uuid::Uuid;
 

@@ -3,7 +3,7 @@ extern crate lazy_static;
 
 use std::time::Duration;
 
-use eventstore::Client as EventClient;
+use kurrentdb::Client as EventClient;
 use rand::Rng;
 use rand::distr::Alphanumeric;
 use redis::Commands;
