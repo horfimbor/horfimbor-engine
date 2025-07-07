@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-jwt-v0.1.1...horfimbor-jwt-v0.1.2) - 2025-07-07
+
+### Other
+
+- switch eventstore to kurrendDb ([#60](https://github.com/horfimbor/horfimbor-engine/pull/60))
+
 ## [0.1.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-jwt-v0.1.0...horfimbor-jwt-v0.1.1) - 2025-03-30
 
 ### Fixed
