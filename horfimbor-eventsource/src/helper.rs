@@ -1,8 +1,8 @@
 //! helper to create subscription
 
 use crate::Stream;
-use eventstore::Error as EventStoreError;
-use eventstore::{
+use kurrentdb::Error as EventStoreError;
+use kurrentdb::{
     Client as EventDb, Error, PersistentSubscription, PersistentSubscriptionOptions, RetryOptions,
     StreamPosition, SubscribeToPersistentSubscriptionOptions, SubscribeToStreamOptions,
     Subscription,
