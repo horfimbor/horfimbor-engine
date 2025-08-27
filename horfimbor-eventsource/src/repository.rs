@@ -173,11 +173,8 @@ where
         loop {
             let rcv_event = sub.next().await.map_err(EventSourceError::EventStore)?;
 
-            let event = match rcv_event.event.as_ref() {
-                None => {
-                    continue;
-                }
-                Some(event) => event,
+            let Some(event) = rcv_event.event.as_ref() else {
+                continue;
             };
 
             let model_key: ModelKey = event
