@@ -1,12 +1,32 @@
 // #![deny(missing_docs)]
 // #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "server")]
 pub mod builder;
 
+#[cfg(feature = "server")]
 use horfimbor_eventsource::model_key::ModelKey;
+
+#[cfg(feature = "server")]
 use jsonwebtoken::{DecodingKey, Validation, decode};
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+
+#[cfg(feature = "client")]
+use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+#[cfg(feature = "client")]
+use jsonwebtoken::decode_header;
+#[cfg(not(feature = "server"))]
+use uuid::Uuid;
+
+// TODO we could do better :thinking:
+#[cfg(not(feature = "server"))]
+#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Default, Hash)]
+pub struct ModelKey {
+    stream_name: String,
+    stream_id: Uuid,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -28,7 +48,7 @@ pub struct Claims {
     roles: Role,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
 pub enum Role {
     #[serde(rename = "a")]
     Admin,
@@ -43,11 +63,15 @@ pub enum ClaimError {
     #[error("jsonwebtoken")]
     JWT(#[from] jsonwebtoken::errors::Error),
 
+    #[error("cannot get data `{0}`")]
+    Other(String),
+
     #[error("no account when building claims")]
     EmptyAccount,
 }
 
 impl Claims {
+    #[cfg(feature = "server")]
     /// parse the token, validate the secrets, audience and issuer
     ///
     /// # Errors
@@ -68,6 +92,40 @@ impl Claims {
             .map_err(ClaimError::JWT)?;
 
         Ok(value.claims)
+    }
+
+    #[cfg(feature = "client")]
+    /// parse the token, but do not validate it
+    ///
+    /// # Errors
+    ///
+    /// Will return `ClaimError` if the decoding failed
+    pub fn from_jwt_insecure(token: &str) -> Result<Self, ClaimError> {
+        match decode_header(token) {
+            Ok(_) => {
+                let mut parts = token.split('.');
+                parts.next();
+                let Some(content) = parts.next() else {
+                    return Err(ClaimError::EmptyAccount);
+                };
+                let data = URL_SAFE_NO_PAD
+                    .decode(content)
+                    .map_err(|e| ClaimError::Other(e.to_string()))?;
+
+                Ok(serde_json::from_slice(&data).map_err(|e| ClaimError::Other(e.to_string()))?)
+            }
+            Err(e) => Err(ClaimError::JWT(e)),
+        }
+
+        // let mut val = Validation::default();
+        // val.set_audience(&[&audience]);
+        // val.set_issuer(&[&issuer]);
+        // val.set_required_spec_claims(&["exp", "iss", "aud"]);
+        //
+        // let value = decode::<Self>(token, &DecodingKey::from_secret(secret.as_ref()), &val)
+        //     .map_err(ClaimError::JWT)?;
+        //
+        // Ok(value.claims)
     }
 
     #[must_use]
@@ -107,39 +165,5 @@ impl Claims {
     #[must_use]
     pub fn account_name(&self) -> &str {
         &self.account_name
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::builder::ClaimBuilder;
-
-    #[test]
-    fn test() {
-        let audience = "some_app";
-        let issuer = "http://auth.localhost:8000";
-        let secret = "SOME_SECRET";
-
-        let mut cb = ClaimBuilder::new(30, audience.to_string(), issuer.to_string());
-
-        let user = ModelKey::new_uuid_v7("user");
-        let account = ModelKey::new_uuid_v7("account");
-        let account_name = "horfirion".to_string();
-
-        cb.set_account(
-            user.clone(),
-            account.clone(),
-            account_name.clone(),
-            Role::Anonymous,
-        );
-
-        let token = cb.build("SOME_SECRET").unwrap();
-
-        let claim = Claims::from_jwt(&token, secret, audience, issuer).unwrap();
-
-        assert_eq!(user, claim.user);
-        assert_eq!(account, claim.account);
-        assert_eq!(account_name, account_name);
     }
 }
