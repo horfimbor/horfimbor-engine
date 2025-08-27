@@ -91,3 +91,37 @@ impl ClaimBuilder {
         .map_err(ClaimError::JWT)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::builder::ClaimBuilder;
+
+    #[test]
+    fn test() {
+        let audience = "some_app";
+        let issuer = "http://auth.localhost:8000";
+        let secret = "SOME_SECRET";
+
+        let mut cb = ClaimBuilder::new(30, audience.to_string(), issuer.to_string());
+
+        let user = ModelKey::new_uuid_v7("user");
+        let account = ModelKey::new_uuid_v7("account");
+        let account_name = "horfirion".to_string();
+
+        cb.set_account(
+            user.clone(),
+            account.clone(),
+            account_name.clone(),
+            Role::Anonymous,
+        );
+
+        let token = cb.build("SOME_SECRET").unwrap();
+
+        let claim = Claims::from_jwt(&token, secret, audience, issuer).unwrap();
+
+        assert_eq!(user, claim.user);
+        assert_eq!(account, claim.account);
+        assert_eq!(account_name, account_name);
+    }
+}
