@@ -12,22 +12,25 @@ categories = ["wasm"]
 crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-horfimbor-client-derive = { version = "0.1.1", path = "../horfimbor-client-derive" }
 
 yew = { version= "0.21", features=["csr"] }
 gloo-net = "0.6"
 reqwasm = "0.5"
 weblog = "0.3"
-wasm-bindgen = "0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 futures = "0.3.28"
 rand = "0.9.2"
 url = "2.5.4"
-bounce = "0.9"
 
-# getrandom is used even by rand in wasm so it's marked as unused
+# getrandom is used by rand in wasm even so it's marked as unused
 getrandom = { version = "0.3", features = ["wasm_js"] }
+
+# wasm-bindgen is used even so it's marked as unused
+wasm-bindgen = "0.2"
 
 [lints]
 workspace = true
+
+[package.metadata.cargo-machete]
+ignored = ["wasm-bindgen", "getrandom"]
