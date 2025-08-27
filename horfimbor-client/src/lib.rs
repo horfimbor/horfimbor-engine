@@ -1,3 +1,6 @@
+// allow this for @{props.balise.clone()}
+#![allow(clippy::ignored_unit_patterns)]
+
 pub mod input;
 pub mod state;
 
@@ -11,7 +14,7 @@ pub trait EventStoreProps: Properties + DeserializeOwned {
     fn id(&self) -> &str;
 }
 
-#[derive(Properties, PartialEq)]
+#[derive(Properties, PartialEq, Eq)]
 pub struct Props {
     pub endpoint: String,
     pub balise: String,

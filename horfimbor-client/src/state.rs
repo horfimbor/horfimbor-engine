@@ -79,7 +79,7 @@ where
 
         let new_host = format!("sse{:06}.{host}", rng.random_range(1..1_000_000));
         match url.set_host(Some(&new_host)) {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(e) => {
                 console_warn!("cannot set host : ");
                 console_warn!(new_host);
@@ -90,22 +90,16 @@ where
         let endpoint = url.to_string();
         console_info!(endpoint.clone());
 
-        let mut es = match EventSource::new(format!("{endpoint}/{path}/{id}/{jwt}").as_str()) {
-            Ok(es) => es,
-            Err(_) => {
-                self.dto = Err(format!(
-                    "cannot open eventsource to {endpoint}/{path}/{id}/<jwt>"
-                ));
-                return;
-            }
+        let Ok(mut es) = EventSource::new(format!("{endpoint}/{path}/{id}/{jwt}").as_str()) else {
+            self.dto = Err(format!(
+                "cannot open eventsource to {endpoint}/{path}/{id}/<jwt>"
+            ));
+            return;
         };
 
-        let mut stream = match es.subscribe("message") {
-            Ok(stream) => stream,
-            Err(_) => {
-                self.dto = Err("cannot subscribe to all messages".to_string());
-                return;
-            }
+        let Ok(mut stream) = es.subscribe("message") else {
+            self.dto = Err("cannot subscribe to all messages".to_string());
+            return;
         };
 
         let link = ctx.link().clone();
@@ -165,13 +159,10 @@ where
                 self.dto = Ok(d);
                 true
             }
-            EventStoreMessage::<DTO, EVENT>::Event(e) => match &mut self.dto {
-                Ok(dto) => {
-                    dto.play_event(&e);
-                    true
-                }
-                Err(_) => false,
-            },
+            EventStoreMessage::<DTO, EVENT>::Event(e) => self.dto.as_mut().is_ok_and(|dto| {
+                dto.play_event(&e);
+                true
+            }),
             EventStoreMessage::<DTO, EVENT>::Error(e) => {
                 self.dto = Err(e);
                 self.es = None;

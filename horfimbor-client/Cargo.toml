@@ -2,6 +2,11 @@
 name = "horfimbor-client"
 version = "0.1.0"
 edition = "2024"
+description = "a web client helper for the horfimbor-engine with Yew"
+repository = "https://github.com/horfimbor/horfimbor-client"
+license-file = "LICENSE"
+categories = ["wasm"]
+
 
 [lib]
 crate-type = ["rlib", "cdylib"]

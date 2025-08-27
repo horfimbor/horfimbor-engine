@@ -3,7 +3,16 @@ use reqwasm::http::{Request, Response};
 use serde::Serialize;
 use std::fmt::Debug;
 
-pub async fn send_command<C: Serialize + Debug, P: EventStoreProps + 'static>(
+/// # Errors
+///
+/// Will return `Err` when the error cannot be sent or something wrong happens on the backend
+///
+/// future not send because of <https://github.com/cloudflare/workers-rs/issues/485>
+#[allow(clippy::future_not_send)]
+pub async fn send_command<
+    C: Serialize + Debug + Send + Sync,
+    P: EventStoreProps + 'static + Send,
+>(
     cmd: &C,
     props: P,
 ) -> Result<Response, String> {
