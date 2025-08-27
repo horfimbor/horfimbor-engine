@@ -3,6 +3,7 @@
 
 use chrono::{DateTime, Duration, Utc};
 use core::ops::Add;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 /// `HfTime` can fail to construct.
@@ -47,7 +48,7 @@ impl Add<Self> for HfDuration {
 
 /// configuration is shared across all service for the same server
 /// it defines how long the game is up and when it started
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct HfTimeConfiguration {
     start_time: i64,
     irl_length: i64,
