@@ -84,18 +84,23 @@ impl HfTimeConfiguration {
     }
 
     /// get start date as UTC value
+    /// # Errors
+    ///
+    /// Will return `Err` if the start date cannot be converted to UTC
     pub fn start_time(&self) -> Result<DateTime<Utc>, HfTimeConfigurationError> {
         DateTime::from_timestamp_millis(self.start_time)
             .ok_or(HfTimeConfigurationError::InvalidStartDate)
     }
 
     /// get irl duration in milliseconds
-    pub fn irl_length(&self) -> i64 {
+    #[must_use]
+    pub const fn irl_length(&self) -> i64 {
         self.irl_length
     }
 
     /// get in game duration in milliseconds
-    pub fn ig_length(&self) -> i64 {
+    #[must_use]
+    pub const fn ig_length(&self) -> i64 {
         self.ig_length
     }
 }
