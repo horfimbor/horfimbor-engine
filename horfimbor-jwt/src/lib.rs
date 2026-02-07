@@ -116,16 +116,6 @@ impl Claims {
             }
             Err(e) => Err(ClaimError::JWT(e)),
         }
-
-        // let mut val = Validation::default();
-        // val.set_audience(&[&audience]);
-        // val.set_issuer(&[&issuer]);
-        // val.set_required_spec_claims(&["exp", "iss", "aud"]);
-        //
-        // let value = decode::<Self>(token, &DecodingKey::from_secret(secret.as_ref()), &val)
-        //     .map_err(ClaimError::JWT)?;
-        //
-        // Ok(value.claims)
     }
 
     #[must_use]

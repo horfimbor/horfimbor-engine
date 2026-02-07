@@ -14,6 +14,14 @@ pub enum HfTimeError {
     InvalidLength,
 }
 
+/// `HfTimeConfiguration` can be invalid.
+#[derive(Error, Debug)]
+pub enum HfTimeConfigurationError {
+    /// in game time must be slower than real time
+    #[error("start date is out of bound")]
+    InvalidStartDate,
+}
+
 /// the in-game time is just a wrapper around an integer
 #[derive(Copy, Clone, Debug)]
 pub struct HfDuration {
@@ -73,6 +81,22 @@ impl HfTimeConfiguration {
             irl_length: irl_length.num_milliseconds(),
             ig_length: ig_length.num_milliseconds(),
         })
+    }
+
+    /// get start date as UTC value
+    pub fn start_time(&self) -> Result<DateTime<Utc>, HfTimeConfigurationError> {
+        DateTime::from_timestamp_millis(self.start_time)
+            .ok_or(HfTimeConfigurationError::InvalidStartDate)
+    }
+
+    /// get irl duration in milliseconds
+    pub fn irl_length(&self) -> i64 {
+        self.irl_length
+    }
+
+    /// get in game duration in milliseconds
+    pub fn ig_length(&self) -> i64 {
+        self.ig_length
     }
 }
 
