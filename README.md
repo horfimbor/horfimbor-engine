@@ -2,7 +2,7 @@
 
 # Horfimbor engine
 
-a small eventsource implementation on top of [eventstore](https://www.eventstore.com/)
+a small eventsource implementation on top of [KurrentDb](https://www.kurrent.io/)
 
 
 ## Development 
