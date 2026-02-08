@@ -1,6 +1,6 @@
 [package]
 name = "horfimbor-jwt"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
 description = "Jwt handler for the game engine Horfimbor"
 repository = "https://github.com/horfimbor/horfimbor-jwt"
@@ -13,7 +13,7 @@ jsonwebtoken = "10.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", optional = true }
 thiserror = { workspace = true }
-horfimbor-eventsource = { version = "0.3.5", path = "../horfimbor-eventsource", optional = true }
+horfimbor-eventsource = { version = "0.3.6", path = "../horfimbor-eventsource", optional = true }
 base64 = {version = "0.22.1", optional = true}
 
 # we dont need to generate uuid and want to be able to use this package in wasm, so we don't use the one define for the workspace

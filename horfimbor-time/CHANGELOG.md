@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-time-v0.2.2...horfimbor-time-v0.2.3) - 2026-02-08
+
+### Other
+
+- allow time config to be serialized to be shared ([#64](https://github.com/horfimbor/horfimbor-engine/pull/64))
+
 ## [0.2.2](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-time-v0.2.1...horfimbor-time-v0.2.2) - 2025-03-10
 
 ### Other

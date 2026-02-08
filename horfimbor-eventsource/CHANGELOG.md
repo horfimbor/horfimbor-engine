@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.6](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.3.5...horfimbor-eventsource-v0.3.6) - 2026-02-08
+
+### Other
+
+- Rename eventstore to KurrentDb and Update dependencies ([#69](https://github.com/horfimbor/horfimbor-engine/pull/69))
+- use let else proposed by clippy ([#66](https://github.com/horfimbor/horfimbor-engine/pull/66))
+
 ## [0.3.5](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.3.4...horfimbor-eventsource-v0.3.5) - 2025-07-07
 
 ### Other
