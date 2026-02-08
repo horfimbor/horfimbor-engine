@@ -290,7 +290,7 @@ where
 {
     /// # Errors
     ///
-    /// Will return `Err` if events cannot be added to the evenstore
+    /// Will return `Err` if events cannot be added to the eventstore
     pub async fn add_command(
         &self,
         key: &ModelKey,

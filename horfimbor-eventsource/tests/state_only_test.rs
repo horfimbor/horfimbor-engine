@@ -144,7 +144,7 @@ async fn concurrent_case() {
 }
 
 fn get_event_db() -> EventClient {
-    let settings = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false"
+    let settings = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false"
         .to_string()
         .parse()
         .unwrap();
