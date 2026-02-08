@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-jwt-v0.1.2...horfimbor-jwt-v0.2.0) - 2026-02-08
+
+### Other
+
+- Rename eventstore to KurrentDb and Update dependencies ([#69](https://github.com/horfimbor/horfimbor-engine/pull/69))
+- allow jwt to be parsed on frontend ([#65](https://github.com/horfimbor/horfimbor-engine/pull/65))
+
 ## [0.1.2](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-jwt-v0.1.1...horfimbor-jwt-v0.1.2) - 2025-07-07
 
 ### Other
