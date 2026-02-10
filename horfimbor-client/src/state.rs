@@ -1,7 +1,7 @@
 use crate::EventStoreProps;
 use futures::StreamExt;
 use gloo_net::eventsource::futures::EventSource;
-use rand::Rng;
+use rand::RngExt;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::Error;
