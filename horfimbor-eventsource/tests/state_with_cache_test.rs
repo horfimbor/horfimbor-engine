@@ -4,7 +4,7 @@ extern crate lazy_static;
 use std::time::Duration;
 
 use kurrentdb::Client as EventClient;
-use rand::Rng;
+use rand::RngExt;
 use rand::distr::Alphanumeric;
 use redis::Commands;
 use tokio::time::sleep;
