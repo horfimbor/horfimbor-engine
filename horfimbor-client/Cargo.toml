@@ -1,0 +1,37 @@
+[package]
+name = "horfimbor-client"
+version = "0.1.0"
+edition = "2024"
+description = "a web client helper for the horfimbor-engine with Yew"
+repository = "https://github.com/horfimbor/horfimbor-client"
+license-file = "LICENSE"
+categories = ["wasm"]
+
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[dependencies]
+
+yew = { version= "0.22", features=["csr"] }
+gloo-net = "0.6"
+reqwasm = "0.5"
+weblog = "0.3"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+futures = "0.3.28"
+rand = "0.10.0"
+url = "2.5.4"
+
+# getrandom is used by rand in wasm even so it's marked as unused
+getrandom = { version = "0.4", features = ["wasm_js"] }
+
+# wasm-bindgen is used even so it's marked as unused
+wasm-bindgen = "0.2"
+uuid = { version = "1.21.0", features = ["serde"] }
+
+[lints]
+workspace = true
+
+[package.metadata.cargo-machete]
+ignored = ["wasm-bindgen", "getrandom"]

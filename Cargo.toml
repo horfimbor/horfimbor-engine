@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "horfimbor-client",
     "horfimbor-client-derive",
     "horfimbor-jwt",
     "horfimbor-eventsource",

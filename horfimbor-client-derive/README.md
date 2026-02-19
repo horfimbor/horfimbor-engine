@@ -1,5 +1,5 @@
-# Horfimbor eventsource derive
+# Horfimbor client derive
 
-macro for [horfimbor-eventsource](https://crates.io/crates/horfimbor-eventsource)
+macro for [horfimbor-client](https://crates.io/crates/horfimbor-client)
 
 The macro Webcomponent allow to load a Yew component all mandatory attributes are set in the webcomponent.

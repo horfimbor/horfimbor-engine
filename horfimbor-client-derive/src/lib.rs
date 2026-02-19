@@ -104,6 +104,8 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
             use custom_elements::CustomElement;
             use web_sys::HtmlElement;
             use super::#component;
+            use std::mem::take;
+
 
             #[derive(Default, Properties, PartialEq)]
             pub struct #name {
@@ -131,7 +133,6 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
                         </#component>
                     }
                 }
-
             }
 
             #[derive(Default)]
@@ -174,6 +175,16 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
                             handle.update(props);
                         }
                     }
+                }
+
+                fn disconnected_callback(&mut self, _this: &HtmlElement) {
+                    match take(&mut self.content){
+                        Some(content) =>{
+                            content.destroy();
+                        },
+                        None => {}
+                    }
+                    self.content = None;
                 }
             }
         }

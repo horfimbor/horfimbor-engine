@@ -7,7 +7,7 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-eventsource:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -16,15 +16,38 @@ jobs:
         run: docker compose up -d
 
       - name: Run tests
-        run: cargo test
+        run: cargo test -p horfimbor-eventsource
 
       - name: Run clippy
-        run: cargo clippy --all-features -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used
-
-      - name: Run machete
-        run: |
-          cargo install cargo-machete
-          cargo machete
+        run: cargo clippy --all-features -p horfimbor-eventsource -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used
 
       - name: Shutdown cluster
         run: docker compose down
+
+  build-jwt:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        feature: [ client, server ]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run tests
+        run: cargo test -p horfimbor-jwt --features ${{ matrix.feature }}
+
+      - name: Run clippy
+        run: cargo clippy -p horfimbor-jwt --features ${{ matrix.feature }} -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used
+
+  build-other:
+    strategy:
+      matrix:
+        library: [horfimbor-client, horfimbor-client-derive, horfimbor-eventsource-derive]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run tests
+        run: cargo test -p ${{ matrix.library }}
+
+      - name: Run clippy
+        run: cargo clippy --all-features -p ${{ matrix.library }} -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used

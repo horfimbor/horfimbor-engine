@@ -28,7 +28,7 @@ default = ["cache-redis"]
 
 [dev-dependencies]
 lazy_static = "1.5"
-rand = "0.9"
+rand = "0.10"
 
 [lints]
 workspace = true
