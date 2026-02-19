@@ -36,7 +36,7 @@ jobs:
         run: cargo test -p horfimbor-jwt --features ${{ matrix.feature }}
 
       - name: Run clippy
-        run: cargo clippy --all-features -p horfimbor-jwt --features ${{ matrix.feature }} -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used
+        run: cargo clippy -p horfimbor-jwt --features ${{ matrix.feature }} -- -D clippy::correctness -D clippy::complexity -D clippy::pedantic -D clippy::nursery -D clippy::perf -W clippy::cargo -D clippy::all -D clippy::expect_used
 
   build-other:
     strategy:
