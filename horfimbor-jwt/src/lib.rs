@@ -1,11 +1,20 @@
 // #![deny(missing_docs)]
 // #![doc = include_str!("../README.md")]
 
+#[cfg(all(feature = "server", feature = "client"))]
+compile_error!("feature \"server\" and feature \"client\" cannot be enabled at the same time");
+
+#[cfg(not(any(feature = "server", feature = "client")))]
+compile_error!("you must enable either the feature \"server\" or \"client\"");
+
 #[cfg(feature = "server")]
 pub mod builder;
 
 #[cfg(feature = "server")]
 use horfimbor_eventsource::model_key::ModelKey;
+
+#[cfg(feature = "client")]
+use horfimbor_client::model_key::ModelKey;
 
 #[cfg(feature = "server")]
 use jsonwebtoken::{DecodingKey, Validation, decode};
@@ -17,16 +26,6 @@ use thiserror::Error;
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 #[cfg(feature = "client")]
 use jsonwebtoken::decode_header;
-#[cfg(not(feature = "server"))]
-use uuid::Uuid;
-
-// TODO we could do better :thinking:
-#[cfg(not(feature = "server"))]
-#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Default, Hash)]
-pub struct ModelKey {
-    stream_name: String,
-    stream_id: Uuid,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {

@@ -28,6 +28,7 @@ getrandom = { version = "0.4", features = ["wasm_js"] }
 
 # wasm-bindgen is used even so it's marked as unused
 wasm-bindgen = "0.2"
+uuid = { version = "1.21.0", features = ["serde"] }
 
 [lints]
 workspace = true
