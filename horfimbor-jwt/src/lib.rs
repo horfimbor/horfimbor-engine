@@ -1,20 +1,15 @@
 // #![deny(missing_docs)]
 // #![doc = include_str!("../README.md")]
 
-#[cfg(all(feature = "server", feature = "client"))]
-compile_error!("feature \"server\" and feature \"client\" cannot be enabled at the same time");
-
-#[cfg(not(any(feature = "server", feature = "client")))]
-compile_error!("you must enable either the feature \"server\" or \"client\"");
-
 #[cfg(feature = "server")]
 pub mod builder;
+pub mod model_key;
 
 #[cfg(feature = "server")]
 use horfimbor_eventsource::model_key::ModelKey;
 
-#[cfg(feature = "client")]
-use horfimbor_client::model_key::ModelKey;
+#[cfg(not(feature = "server"))]
+use model_key::ModelKey;
 
 #[cfg(feature = "server")]
 use jsonwebtoken::{DecodingKey, Validation, decode};

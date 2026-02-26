@@ -4,6 +4,7 @@
 use chrono::{DateTime, Duration, Utc};
 use core::ops::Add;
 use serde::{Deserialize, Serialize};
+use std::ops::{Mul, Sub};
 use thiserror::Error;
 
 /// `HfTime` can fail to construct.
@@ -22,7 +23,8 @@ pub enum HfTimeConfigurationError {
     InvalidStartDate,
 }
 
-/// the in-game time is just a wrapper around an integer
+/// the in-game time is just a wrapper around an integer representing the milliseconds
+/// since the beginning of the game
 #[derive(Copy, Clone, Debug)]
 pub struct HfDuration {
     value: i64,
@@ -54,6 +56,24 @@ impl Add<Self> for HfDuration {
     }
 }
 
+impl Sub<Self> for HfDuration {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        Self {
+            value: self.value - rhs.value,
+        }
+    }
+}
+
+impl Mul<i64> for HfDuration {
+    type Output = i64;
+
+    fn mul(self, rhs: i64) -> Self::Output {
+        self.value * rhs
+    }
+}
+
 /// configuration is shared across all service for the same server
 /// it defines how long the game is up and when it started
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -62,7 +82,6 @@ pub struct HfTimeConfiguration {
     irl_length: i64,
     ig_length: i64,
 }
-
 impl HfTimeConfiguration {
     /// # Errors
     ///
@@ -102,6 +121,15 @@ impl HfTimeConfiguration {
     #[must_use]
     pub const fn ig_length(&self) -> i64 {
         self.ig_length
+    }
+
+    /// return the in game time between 2 irl datetime
+    #[must_use]
+    pub fn diff_hf_millis(&self, start: DateTime<Utc>, end: DateTime<Utc>) -> HfDuration {
+        let start = HfTime::new(start, *self);
+        let end = HfTime::new(end, *self);
+
+        end.as_hf_duration() - start.as_hf_duration()
     }
 }
 

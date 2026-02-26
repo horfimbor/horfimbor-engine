@@ -2,7 +2,6 @@
 #![allow(clippy::ignored_unit_patterns)]
 
 pub mod input;
-pub mod model_key;
 pub mod state;
 
 use serde::de::DeserializeOwned;
