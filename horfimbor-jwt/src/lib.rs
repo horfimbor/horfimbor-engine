@@ -3,9 +3,13 @@
 
 #[cfg(feature = "server")]
 pub mod builder;
+pub mod model_key;
 
 #[cfg(feature = "server")]
 use horfimbor_eventsource::model_key::ModelKey;
+
+#[cfg(not(feature = "server"))]
+use model_key::ModelKey;
 
 #[cfg(feature = "server")]
 use jsonwebtoken::{DecodingKey, Validation, decode};
@@ -14,19 +18,9 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[cfg(feature = "client")]
-use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+use jsonwebtoken::dangerous::insecure_decode;
 #[cfg(feature = "client")]
 use jsonwebtoken::decode_header;
-#[cfg(not(feature = "server"))]
-use uuid::Uuid;
-
-// TODO we could do better :thinking:
-#[cfg(not(feature = "server"))]
-#[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Default, Hash)]
-pub struct ModelKey {
-    stream_name: String,
-    stream_id: Uuid,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -103,29 +97,11 @@ impl Claims {
     pub fn from_jwt_insecure(token: &str) -> Result<Self, ClaimError> {
         match decode_header(token) {
             Ok(_) => {
-                let mut parts = token.split('.');
-                parts.next();
-                let Some(content) = parts.next() else {
-                    return Err(ClaimError::EmptyAccount);
-                };
-                let data = URL_SAFE_NO_PAD
-                    .decode(content)
-                    .map_err(|e| ClaimError::Other(e.to_string()))?;
-
-                Ok(serde_json::from_slice(&data).map_err(|e| ClaimError::Other(e.to_string()))?)
+                let value = insecure_decode::<Self>(token).map_err(ClaimError::JWT)?;
+                Ok(value.claims)
             }
             Err(e) => Err(ClaimError::JWT(e)),
         }
-
-        // let mut val = Validation::default();
-        // val.set_audience(&[&audience]);
-        // val.set_issuer(&[&issuer]);
-        // val.set_required_spec_claims(&["exp", "iss", "aud"]);
-        //
-        // let value = decode::<Self>(token, &DecodingKey::from_secret(secret.as_ref()), &val)
-        //     .map_err(ClaimError::JWT)?;
-        //
-        // Ok(value.claims)
     }
 
     #[must_use]
