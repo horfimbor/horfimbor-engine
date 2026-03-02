@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
 #[cfg(feature = "client")]
-use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
+use jsonwebtoken::dangerous::insecure_decode;
 #[cfg(feature = "client")]
 use jsonwebtoken::decode_header;
 
@@ -97,16 +97,8 @@ impl Claims {
     pub fn from_jwt_insecure(token: &str) -> Result<Self, ClaimError> {
         match decode_header(token) {
             Ok(_) => {
-                let mut parts = token.split('.');
-                parts.next();
-                let Some(content) = parts.next() else {
-                    return Err(ClaimError::EmptyAccount);
-                };
-                let data = URL_SAFE_NO_PAD
-                    .decode(content)
-                    .map_err(|e| ClaimError::Other(e.to_string()))?;
-
-                Ok(serde_json::from_slice(&data).map_err(|e| ClaimError::Other(e.to_string()))?)
+                let value = insecure_decode::<Self>(token).map_err(ClaimError::JWT)?;
+                Ok(value.claims)
             }
             Err(e) => Err(ClaimError::JWT(e)),
         }
