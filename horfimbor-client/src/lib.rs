@@ -16,17 +16,16 @@ pub trait EventStoreProps: Properties + DeserializeOwned {
 
 #[derive(Properties, PartialEq, Eq)]
 pub struct Props {
-    pub endpoint: String,
-    pub balise: String,
-    pub jwt: String,
-    pub id: String,
+    pub endpoint: AttrValue,
+    pub balise: AttrValue,
+    pub jwt: AttrValue,
+    pub id: AttrValue,
 }
 
 #[function_component]
 pub fn LoadExternalComponent(props: &Props) -> Html {
     let key: String = props
         .endpoint
-        .clone()
         .chars()
         .filter(|&c| c.is_alphanumeric())
         .collect();
@@ -44,7 +43,7 @@ pub fn LoadExternalComponent(props: &Props) -> Html {
             }}
             window["{key}"] = 42;
             "#,
-        endpoint = props.endpoint.clone()
+        endpoint = props.endpoint
     );
 
     html! {

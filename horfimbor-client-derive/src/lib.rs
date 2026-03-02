@@ -80,13 +80,13 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
                     });
                 }
                 default_props.extend(quote! {
-                    #ident : this.get_attribute(#attribute_html),
+                    #ident : this.get_attribute(#attribute_html).map(|s| s.into()),
                 });
                 observed.extend(quote! {
                     #attribute_html,
                 });
                 get_attributes.extend(quote! {
-                    #ident: this.get_attribute(#attribute_html),
+                    #ident: this.get_attribute(#attribute_html).map(|s| s.into()),
                 });
                 real_props.extend(quote! {
                     #ident={{#ident.clone()}}

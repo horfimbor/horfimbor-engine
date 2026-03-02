@@ -9,10 +9,7 @@ use std::fmt::Debug;
 ///
 /// future not send because of <https://github.com/cloudflare/workers-rs/issues/485>
 #[allow(clippy::future_not_send)]
-pub async fn send_command<
-    C: Serialize + Debug + Send + Sync,
-    P: EventStoreProps + 'static + Send,
->(
+pub async fn send_command<C: Serialize + Debug + Send + Sync, P: EventStoreProps + 'static>(
     cmd: &C,
     props: P,
 ) -> Result<Response, String> {
