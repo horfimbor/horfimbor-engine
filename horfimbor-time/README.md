@@ -19,7 +19,7 @@ let config = HfTimeConfiguration::new(
 .expect("cannot create configuration");
 
 let time = HfTime::now(config);
-let building_time = HfDuration::seconds(4000);
+let building_time = HfDuration::from_seconds(4000);
 let end = time + building_time;
 
 println!("building will end at : {}", end.as_datetime().unwrap());

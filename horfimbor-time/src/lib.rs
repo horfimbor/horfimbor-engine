@@ -33,16 +33,28 @@ pub struct HfDuration {
 impl HfDuration {
     /// the baseline for a web game is the millisecond
     #[must_use]
-    pub const fn milliseconds(value: i64) -> Self {
+    pub const fn from_milliseconds(value: i64) -> Self {
         Self { value }
     }
 
     /// can be easier to work with seconds
     #[must_use]
-    pub const fn seconds(value: i64) -> Self {
+    pub const fn from_seconds(value: i64) -> Self {
         Self {
             value: value * 1000,
         }
+    }
+
+    /// the baseline for a web game is the millisecond
+    #[must_use]
+    pub const fn as_milliseconds(self) -> i64 {
+        self.value
+    }
+
+    /// can be easier to work with seconds
+    #[must_use]
+    pub const fn as_seconds(self) -> i64 {
+        self.value / 1000
     }
 }
 
@@ -140,8 +152,16 @@ pub struct HfTime {
     config: HfTimeConfiguration,
 }
 
+/// `HfStatus` return the current status of the time, and the duration until the switch
+pub enum HfStatus {
+    /// the game is paused
+    Paused,
+    /// the game time is running
+    Running,
+}
+
 impl HfTime {
-    /// it is possible to create an `HfTime` from anypoint in time
+    /// it is possible to create an `HfTime` from any point in time
     #[must_use]
     pub const fn new(time: DateTime<Utc>, config: HfTimeConfiguration) -> Self {
         Self {
@@ -175,6 +195,23 @@ impl HfTime {
         HfDuration {
             value: self.as_hf_millis(),
         }
+    }
+
+    /// return the status with duration before change
+    #[must_use]
+    pub const fn hf_status(&self) -> (HfStatus, Duration) {
+        let rest = self.time % self.config.irl_length;
+
+        if rest > self.config.ig_length {
+            return (
+                HfStatus::Paused,
+                Duration::milliseconds(self.config.irl_length - rest),
+            );
+        }
+        (
+            HfStatus::Running,
+            Duration::milliseconds(self.config.ig_length - rest),
+        )
     }
 
     const fn as_hf_millis(&self) -> i64 {
@@ -324,7 +361,7 @@ mod test_add {
         assert_eq!(time.as_hf_millis(), 60 * 5);
         assert_eq!(time.as_millis(), 120 * 5);
 
-        time = time + HfDuration::milliseconds(60 * 3);
+        time = time + HfDuration::from_milliseconds(60 * 3);
         assert_eq!(time.as_hf_millis(), 60 * 8);
         assert_eq!(time.as_millis(), 120 * 8);
     }
@@ -346,7 +383,7 @@ mod test_add {
         assert_eq!(time.as_hf_millis(), 75);
         assert_eq!(time.as_millis(), 215);
 
-        time = time + HfDuration::milliseconds(30);
+        time = time + HfDuration::from_milliseconds(30);
         assert_eq!(time.as_hf_millis(), 105);
         assert_eq!(time.as_millis(), 315);
     }
@@ -368,7 +405,7 @@ mod test_add {
         assert_eq!(time.as_hf_millis(), 60);
         assert_eq!(time.as_millis(), 150);
 
-        time = time + HfDuration::milliseconds(30);
+        time = time + HfDuration::from_milliseconds(30);
         assert_eq!(time.as_hf_millis(), 90);
         assert_eq!(time.as_millis(), 300);
     }
@@ -386,7 +423,7 @@ mod test_add {
             config,
         );
 
-        time = time + HfDuration::milliseconds(10);
+        time = time + HfDuration::from_milliseconds(10);
         assert_eq!(time.as_hf_millis(), 110);
         assert_eq!(time.as_millis(), 1010);
     }

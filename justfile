@@ -17,11 +17,13 @@ doc projet:
 
 clippy:
     cargo clippy --all-features -- \
-    -D clippy::correctness \
-    -D clippy::complexity \
-    -D clippy::pedantic \
-    -D clippy::nursery \
-    -D clippy::perf \
-    -D clippy::all \
-    -D clippy::expect_used \
-    -W clippy::cargo
+    -W clippy::correctness \
+    -W clippy::complexity \
+    -W clippy::pedantic \
+    -W clippy::nursery \
+    -W clippy::perf \
+    -W clippy::all \
+    -W clippy::expect_used \
+    -W clippy::cargo \
+    -A clippy::multiple_crate_versions \
+    -D warnings
