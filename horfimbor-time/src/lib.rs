@@ -94,6 +94,17 @@ pub struct HfTimeConfiguration {
     irl_length: i64,
     ig_length: i64,
 }
+
+impl Default for HfTimeConfiguration {
+    fn default() -> Self {
+        Self {
+            start_time: 0,
+            irl_length: 1_000_000,
+            ig_length: 100,
+        }
+    }
+}
+
 impl HfTimeConfiguration {
     /// # Errors
     ///
@@ -315,24 +326,26 @@ impl Add<HfDuration> for HfTime {
     type Output = Self;
 
     fn add(self, rhs: HfDuration) -> Self {
+        // easy we compute the number of played loop irl + to add
         let mut nb_loop = self.time / self.config.irl_length;
         nb_loop += rhs.value / self.config.ig_length;
 
-        let mut current_rest = self.time % self.config.irl_length;
-
-        if current_rest > self.config.ig_length {
+        // if we are after the end of game time, we jump to start of game time
+        let mut irl_rest = self.time % self.config.irl_length;
+        if irl_rest > self.config.ig_length {
             nb_loop += 1;
-            current_rest = 0;
+            irl_rest = 0;
         }
 
-        let mut rest = rhs.value % self.config.ig_length;
-        if current_rest + rest > self.config.ig_length {
+        let mut ig_rest = rhs.value % self.config.ig_length;
+
+        if irl_rest + ig_rest > self.config.ig_length {
             nb_loop += 1;
-            current_rest = 0;
-            rest = current_rest + rest - self.config.ig_length;
+            ig_rest = irl_rest + ig_rest - self.config.ig_length;
+            irl_rest = 0;
         }
 
-        let time = nb_loop * self.config.irl_length + current_rest + rest;
+        let time = nb_loop * self.config.irl_length + irl_rest + ig_rest;
 
         Self {
             time,
@@ -340,6 +353,7 @@ impl Add<HfDuration> for HfTime {
         }
     }
 }
+
 #[cfg(test)]
 mod test_add {
     use super::*;
@@ -426,6 +440,32 @@ mod test_add {
         time = time + HfDuration::from_milliseconds(10);
         assert_eq!(time.as_hf_millis(), 110);
         assert_eq!(time.as_millis(), 1010);
+    }
+
+    #[test]
+    fn test_add_superior_date_add_negative_start_date() {
+        let config = HfTimeConfiguration::new(
+            Duration::seconds(900),
+            Duration::seconds(600),
+            DateTime::from_timestamp_millis(-55222041600000).unwrap(),
+        )
+        .expect("cannot create configuration");
+
+        let bug_time = DateTime::from_timestamp_millis(56997116612120 - 55222041600000).unwrap();
+
+        let hf_time = HfTime::new(bug_time, config);
+        let hf_duration = HfDuration::from_seconds(100usize as i64);
+
+        let end = hf_time + hf_duration;
+
+        let hf_result = end.as_datetime().expect("no datetime from hf result");
+
+        assert!(
+            hf_result.clone() >= bug_time.clone(),
+            "we must have {} >= {}",
+            hf_result,
+            bug_time
+        )
     }
 }
 
