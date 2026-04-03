@@ -180,7 +180,7 @@ where
             let model_key: ModelKey = event
                 .stream_id()
                 .try_into()
-                .map_err(EventSourceError::Uuid)?;
+                .map_err(EventSourceError::ModelKey)?;
 
             let mut model = self
                 .cache_db()
@@ -202,22 +202,12 @@ where
             match ordering {
                 Ordering::Less => {
                     model = self.complete_from_es(&model_key, &model).await?;
-                    dbg!(format!(
-                        "cache have been completed from {:?} to {:?}",
-                        event.revision, model.position,
-                    ));
 
                     self.cache_db()
                         .set(&model_key, model)
                         .map_err(EventSourceError::CacheDbError)?;
                 }
-                Ordering::Equal => {}
-                Ordering::Greater => {
-                    dbg!(format!(
-                        "cache should be lower than {} but is : {:?}",
-                        event.revision, model.position
-                    ));
-                }
+                Ordering::Equal | Ordering::Greater => {}
             }
 
             sub.ack(&rcv_event)
@@ -283,6 +273,16 @@ where
     }
 }
 
+/// Appending event can resolve with multiple correct behavior
+#[derive(Eq, PartialEq)]
+pub enum AddedEvent {
+    /// Successfully added, nothing more to do
+    Success,
+
+    /// The event wasn't added, the command need to be retried
+    NeedRetry,
+}
+
 impl<S, C> StateRepository<S, C>
 where
     S: State,
@@ -307,7 +307,7 @@ where
             let (l_model, l_events, retry) = self
                 .try_append(key, command.clone(), previous_metadata)
                 .await?;
-            if retry {
+            if retry == AddedEvent::NeedRetry {
                 continue;
             }
 
@@ -329,7 +329,7 @@ where
         key: &ModelKey,
         command: S::Command,
         previous_metadata: Option<&Metadata>,
-    ) -> Result<(S, Vec<S::Event>, bool), EventSourceStateError>
+    ) -> Result<(S, Vec<S::Event>, AddedEvent), EventSourceStateError>
     where
         S: State + Sync,
     {
@@ -380,7 +380,7 @@ where
         key: &ModelKey,
         options: &AppendToStreamOptions,
         events_with_data: Vec<CompleteEvent>,
-    ) -> Result<bool, EventSourceStateError>
+    ) -> Result<AddedEvent, EventSourceStateError>
     where
         S: State,
     {
@@ -403,11 +403,8 @@ where
             .await;
 
         match appended {
-            Ok(_) => Ok(false),
-            Err(Error::WrongExpectedVersion { expected, current }) => {
-                println!("{current} instead of {expected}");
-                Ok(true)
-            }
+            Ok(_) => Ok(AddedEvent::Success),
+            Err(Error::WrongExpectedVersion { .. }) => Ok(AddedEvent::NeedRetry),
             Err(e) => Err(EventSourceStateError::EventSourceError(
                 EventSourceError::EventStore(e),
             )),

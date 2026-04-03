@@ -86,7 +86,6 @@ async fn with_cache() {
     );
 
     let data_es = repo.get_model(&key).await.unwrap();
-    dbg!(data_es.clone());
 
     assert_eq!(
         serde_json::to_string(&data_es).unwrap(),

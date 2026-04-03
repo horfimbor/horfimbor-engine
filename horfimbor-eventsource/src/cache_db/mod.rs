@@ -40,7 +40,9 @@ where
 
         match data {
             Ok(None) => Ok(ModelWithPosition::default()),
-            Ok(Some(value)) => Ok(serde_json::from_str(value.as_str()).unwrap_or_default()),
+            Ok(Some(value)) => {
+                Ok(serde_json::from_str(value.as_str()).map_err(DbError::SerdeJson)?)
+            }
             Err(err) => Err(err),
         }
     }
@@ -51,14 +53,13 @@ where
     ///
     /// Will return `Err` if any error append when calling the DB.
     fn set(&self, key: &ModelKey, data: ModelWithPosition<S>) -> Result<(), DbError> {
-        let s = serde_json::to_string(&data)
-            .map_err(|_err| todo!("error in StateDb.set is not handled yet"))?;
+        let s = serde_json::to_string(&data).map_err(DbError::SerdeJson)?;
         self.set_in_db(key, s)
     }
 }
 
 /// cache db can fail in multiple ways.
-#[derive(Error, Debug, PartialEq, Eq)]
+#[derive(Error, Debug)]
 pub enum DbError {
     /// data store disconnected
     #[error("data store disconnected `{0}`")]
@@ -67,6 +68,10 @@ pub enum DbError {
     /// internal error can be anything depending on the `cache_db`
     #[error("internal `{0}`")]
     Internal(String),
+
+    /// serde error while reading or writing the cache
+    #[error("corruptCache `{0}`")]
+    SerdeJson(#[from] serde_json::Error),
 }
 
 /// `NoCache` is a placeholder allowing quick development,

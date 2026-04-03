@@ -56,8 +56,6 @@ async fn test_with_public_event() {
             }
 
             sub.ack(&rcv_event).await.expect("cannot ack the event");
-
-            dbg!(nb);
         }
     });
 
