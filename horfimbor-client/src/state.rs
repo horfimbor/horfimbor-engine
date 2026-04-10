@@ -8,7 +8,7 @@ use serde_json::Error;
 use std::marker::PhantomData;
 use std::time::Duration;
 use url::Url;
-use weblog::{console_info, console_warn};
+use weblog::{console_error, console_info, console_warn};
 use yew::platform::spawn_local;
 use yew::platform::time::sleep;
 use yew::prelude::*;
@@ -114,7 +114,9 @@ where
                         Ok(m) => {
                             link.send_message(m);
                         }
-                        Err(_) => {
+                        Err(e) => {
+                            console_info!(json);
+                            console_error!(e.to_string());
                             link.send_message(EventStoreMessage::<DTO, EVENT>::Error(
                                 "stream closed".to_string(),
                             ));
