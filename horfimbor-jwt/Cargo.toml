@@ -17,10 +17,11 @@ horfimbor-eventsource = { version = "0.3.6", path = "../horfimbor-eventsource", 
 horfimbor-client = { version = "0.1.0", path = "../horfimbor-client", optional = true }
 base64 = {version = "0.22", optional = true}
 uuid = { workspace = true }
+rocket = {version = "0.5", optional = true}
 
 [features]
 default = []
-server = ["horfimbor-eventsource"]
+server = ["horfimbor-eventsource", "rocket"]
 client = ["horfimbor-client","base64", "serde_json"]
 
 

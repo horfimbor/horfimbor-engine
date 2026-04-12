@@ -1,9 +1,12 @@
 // #![deny(missing_docs)]
 // #![doc = include_str!("../README.md")]
 
+pub mod model_key;
+
 #[cfg(feature = "server")]
 pub mod builder;
-pub mod model_key;
+#[cfg(feature = "server")]
+pub mod rocket;
 
 #[cfg(feature = "server")]
 use horfimbor_eventsource::model_key::ModelKey;
@@ -42,7 +45,7 @@ pub struct Claims {
     roles: Role,
 }
 
-#[derive(Debug, Serialize, Deserialize, Eq, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Eq, PartialEq, Copy, Clone)]
 pub enum Role {
     #[serde(rename = "a")]
     Admin,
