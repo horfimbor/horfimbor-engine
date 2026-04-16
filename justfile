@@ -3,6 +3,7 @@ default: precommit
 precommit: test clippy
     cargo fmt
 
+alias dc-db := dc-up
 dc-up:
     docker compose up -d
 
