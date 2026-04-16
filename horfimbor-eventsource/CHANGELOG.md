@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.3.6...horfimbor-eventsource-v0.4.0) - 2026-04-16
+
+### Other
+
+- add horfimbor-client ([#63](https://github.com/horfimbor/horfimbor-engine/pull/63))
+
 ## [0.3.6](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-eventsource-v0.3.5...horfimbor-eventsource-v0.3.6) - 2026-02-08
 
 ### Other
