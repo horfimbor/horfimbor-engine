@@ -2,6 +2,11 @@
 name = "horfimbor-callback-recall"
 version = "0.1.0"
 edition = "2024"
+description = "a small lib allowing to store callback that will be triggered at a specified date"
+repository = "https://github.com/horfimbor/horfimbor-callback-recall"
+license-file = "LICENSE"
+keywords = ["event", "callback"]
+categories = []
 
 [dependencies]
 futures = "0.3"
@@ -16,4 +21,4 @@ default = ["sqlx_sqlite"]
 sqlx_sqlite = ["sqlx"]
 
 [lints]
-#workspace = true
+workspace = true

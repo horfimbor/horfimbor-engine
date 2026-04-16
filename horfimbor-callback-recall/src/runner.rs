@@ -4,7 +4,7 @@ use chrono::Utc;
 use std::collections::HashMap;
 use std::time::Duration;
 
-pub(crate) async fn run<P: Pool>(inner: Inner<P>, duration: Duration) {
+pub async fn run<P: Pool>(inner: Inner<P>, duration: Duration) {
     let mut interval = tokio::time::interval(duration);
     loop {
         interval.tick().await;
@@ -29,10 +29,9 @@ pub(crate) async fn run<P: Pool>(inner: Inner<P>, duration: Duration) {
 async fn run_one<P: Pool>(pool: P, handlers: HashMap<String, HandlerFn>, row: CallBackRow) {
     let now = Utc::now();
 
-    if row.due_date > now {
-        if let Ok(delta) = (row.due_date - now).to_std() {
+    if row.due_date > now && let Ok(delta) = (row.due_date - now).to_std() {
             tokio::time::sleep(delta).await;
-        }
+
     }
 
     let Some(handler) = handlers.get(&row.identifier) else {
@@ -47,7 +46,7 @@ async fn run_one<P: Pool>(pool: P, handlers: HashMap<String, HandlerFn>, row: Ca
     let res = tokio::spawn(handler(row.payload)).await;
 
     match res {
-        Ok(_) => {
+        Ok(()) => {
             let res = pool.mark_fired(row.id).await;
             if res.is_err() {
                 dbg!(&res);
