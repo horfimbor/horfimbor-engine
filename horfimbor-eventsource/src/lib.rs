@@ -11,10 +11,10 @@ use serde::Serialize;
 use serde::de::DeserializeOwned;
 use serde_json::Error as SerdeError;
 use thiserror::Error;
-use uuid::{Error as UuidError, Uuid};
+use uuid::Uuid;
 
 use crate::cache_db::DbError;
-use crate::model_key::ModelKey;
+use crate::model_key::{ModelKey, ModelKeyError};
 
 pub mod cache_db;
 pub mod helper;
@@ -78,8 +78,8 @@ pub enum EventSourceError {
     Serde(#[from] SerdeError),
 
     /// Error when converting uuid
-    #[error("Uuid error")]
-    Uuid(#[from] UuidError),
+    #[error("ModelKey error")]
+    ModelKey(#[from] ModelKeyError),
 }
 
 /// error coming from the `StateRepository`

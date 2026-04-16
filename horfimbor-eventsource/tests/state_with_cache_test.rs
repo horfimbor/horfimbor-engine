@@ -4,7 +4,7 @@ extern crate lazy_static;
 use std::time::Duration;
 
 use kurrentdb::Client as EventClient;
-use rand::Rng;
+use rand::RngExt;
 use rand::distr::Alphanumeric;
 use redis::Commands;
 use tokio::time::sleep;
@@ -86,7 +86,6 @@ async fn with_cache() {
     );
 
     let data_es = repo.get_model(&key).await.unwrap();
-    dbg!(data_es.clone());
 
     assert_eq!(
         serde_json::to_string(&data_es).unwrap(),

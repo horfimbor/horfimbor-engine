@@ -6,6 +6,7 @@ use std::fmt::{Display, Formatter};
 use uuid::{Error as UuidError, Uuid};
 
 use sha1::{Digest, Sha1};
+use thiserror::Error;
 
 /// container for the entity key
 #[derive(Deserialize, Serialize, Debug, Clone, Eq, PartialEq, Default, Hash)]
@@ -75,12 +76,26 @@ impl ModelKey {
     }
 }
 
+/// the multiple in which the try from can fail
+#[derive(Error, Debug)]
+pub enum ModelKeyError {
+    /// error bubble up from Uuid
+    #[error("uuid error`{0}`")]
+    UuidError(#[from] UuidError),
+
+    /// the string wasnt
+    #[error("the parameter was empty")]
+    Empty,
+}
+
 impl TryFrom<&str> for ModelKey {
-    type Error = UuidError;
+    type Error = ModelKeyError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         let mut split = value.split('-');
-        let stream_name = split.next().unwrap_or_default();
+        let Some(stream_name) = split.next() else {
+            return Err(ModelKeyError::Empty);
+        };
         let to_check_uuid = split.collect::<Vec<&str>>().join("-");
         let stream_id = Uuid::parse_str(&to_check_uuid)?;
         Ok(Self {
