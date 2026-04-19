@@ -6,7 +6,7 @@ description = "a small lib allowing to store callback that will be triggered at 
 repository = "https://github.com/horfimbor/horfimbor-callback-recall"
 license-file = "LICENSE"
 keywords = ["event", "callback"]
-categories = []
+categories = ["Database interfaces"]
 
 [dependencies]
 futures = "0.3"

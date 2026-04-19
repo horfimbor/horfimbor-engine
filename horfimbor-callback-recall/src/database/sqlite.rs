@@ -4,8 +4,26 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use sqlx::Row;
 use sqlx::SqlitePool;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
+use std::str::FromStr;
 
 const MIGRATION: &str = include_str!("./sqlite_migration.sql");
+
+/// # Errors
+///
+/// This function fail when the db file cannot be opened
+///
+pub async fn open(database_url: &str) -> Result<SqlitePool, CallbackError> {
+    let opts = SqliteConnectOptions::from_str(database_url)
+        .map_err(|e| CallbackError::Database(e.to_string()))?
+        .create_if_missing(true);
+
+    SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect_with(opts)
+        .await
+        .map_err(|e| CallbackError::Database(e.to_string()))
+}
 
 #[async_trait]
 impl Pool for SqlitePool {
@@ -25,7 +43,7 @@ impl Pool for SqlitePool {
     }
 
     async fn insert_callback(&self, cb: CallBack) -> Result<(), CallbackError> {
-        sqlx::query("INSERT INTO callbacks (identifier, payload, due_date) VALUES (?, ?, ?, ?)")
+        sqlx::query("INSERT INTO callbacks (identifier, payload, due_date) VALUES (?, ?, ?)")
             .bind(cb.identifier)
             .bind(cb.payload)
             .bind(cb.due_date)
@@ -54,7 +72,7 @@ impl Pool for SqlitePool {
             .into_iter()
             .map(|r| CallBackRow {
                 id: r.get("id"),
-                identifier: r.get("name"),
+                identifier: r.get("identifier"),
                 payload: r.get("payload"),
                 due_date: r.get("due_date"),
             })

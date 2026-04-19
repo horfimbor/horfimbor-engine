@@ -10,7 +10,8 @@ pub mod error;
 pub(crate) mod runner;
 
 /// A registered async handler. Takes owned payload bytes and returns a future.
-type HandlerFn = Arc<dyn Fn(Vec<u8>) -> BoxFuture<'static, ()> + Send + Sync + 'static>;
+type HandlerFn =
+    Arc<dyn Fn(Vec<u8>) -> BoxFuture<'static, Result<(), String>> + Send + Sync + 'static>;
 
 pub(crate) struct Inner<P: Pool> {
     pub pool: P,
@@ -45,30 +46,33 @@ where
     pub fn register<F, Fut>(&mut self, name: &str, handler: F)
     where
         F: Fn(Vec<u8>) -> Fut + Send + Sync + 'static,
-        Fut: Future<Output = ()> + Send + 'static,
+        Fut: Future<Output = Result<(), String>> + Send + 'static,
     {
         let boxed: HandlerFn = Arc::new(move |payload| Box::pin(handler(payload)));
         self.inner.handlers.insert(name.to_string(), boxed);
     }
 
-    pub fn start(self) -> SchedulerHandle<P> {
+    pub fn start(self) -> (SchedulerEmitter<P>, SchedulerListener) {
         let pool = self.inner.pool.clone();
         let task = tokio::spawn(runner::run(self.inner, self.duration));
-        SchedulerHandle { task, pool }
+        (SchedulerEmitter { pool }, SchedulerListener { task })
     }
 }
 
 /// A handle to the running scheduler background task.
-pub struct SchedulerHandle<P> {
-    task: tokio::task::JoinHandle<()>,
+pub struct SchedulerEmitter<P> {
     pool: P,
 }
 
-impl<P> SchedulerHandle<P>
+/// A handle to the running scheduler background task.
+pub struct SchedulerListener {
+    task: tokio::task::JoinHandle<()>,
+}
+
+impl<P> SchedulerEmitter<P>
 where
     P: Pool,
 {
-
     /// # Errors
     ///
     /// This function will fail if the callback cannot be registered into the DB.
@@ -76,7 +80,9 @@ where
     pub async fn schedule(&self, call_back: CallBack) -> Result<(), CallbackError> {
         self.pool.insert_callback(call_back).await
     }
+}
 
+impl SchedulerListener {
     /// Wait until the poller task finishes (only happens on abort or panic).
     pub async fn join(self) {
         let _ = self.task.await;

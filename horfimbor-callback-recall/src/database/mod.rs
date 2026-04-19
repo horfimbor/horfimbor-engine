@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 
 #[cfg(feature = "sqlx_sqlite")]
-mod sqlite;
+pub mod sqlite;
 
 pub struct CallBack {
     identifier: String,
@@ -16,6 +16,17 @@ pub struct CallBackRow {
     pub identifier: String,
     pub payload: Vec<u8>,
     pub due_date: DateTime<Utc>,
+}
+
+impl CallBack {
+    #[must_use]
+    pub const fn new(identifier: String, payload: Vec<u8>, due_date: DateTime<Utc>) -> Self {
+        Self {
+            identifier,
+            payload,
+            due_date,
+        }
+    }
 }
 
 #[async_trait]

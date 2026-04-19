@@ -29,9 +29,10 @@ pub async fn run<P: Pool>(inner: Inner<P>, duration: Duration) {
 async fn run_one<P: Pool>(pool: P, handlers: HashMap<String, HandlerFn>, row: CallBackRow) {
     let now = Utc::now();
 
-    if row.due_date > now && let Ok(delta) = (row.due_date - now).to_std() {
-            tokio::time::sleep(delta).await;
-
+    if row.due_date > now
+        && let Ok(delta) = (row.due_date - now).to_std()
+    {
+        tokio::time::sleep(delta).await;
     }
 
     let Some(handler) = handlers.get(&row.identifier) else {
@@ -46,8 +47,16 @@ async fn run_one<P: Pool>(pool: P, handlers: HashMap<String, HandlerFn>, row: Ca
     let res = tokio::spawn(handler(row.payload)).await;
 
     match res {
-        Ok(()) => {
+        Ok(Ok(())) => {
             let res = pool.mark_fired(row.id).await;
+            if res.is_err() {
+                dbg!(&res);
+                todo!("handle error")
+            }
+        }
+        Ok(Err(err)) => {
+            let err = format!("event failed : {err}");
+            let res = pool.mark_failed(row.id, &err).await;
             if res.is_err() {
                 dbg!(&res);
                 todo!("handle error")
