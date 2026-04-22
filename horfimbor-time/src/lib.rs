@@ -56,6 +56,24 @@ impl HfDuration {
     pub const fn as_seconds(self) -> i64 {
         self.value / 1000
     }
+
+    /// function to match Duration api
+    #[must_use]
+    pub const fn num_seconds(self) -> i64 {
+        self.value / 1000
+    }
+
+    /// function to match Duration api
+    #[must_use]
+    pub const fn num_minutes(self) -> i64 {
+        self.num_seconds() / 60
+    }
+
+    /// function to match Duration api
+    #[must_use]
+    pub const fn num_hours(self) -> i64 {
+        self.num_minutes() / 60
+    }
 }
 
 impl Add<Self> for HfDuration {
@@ -190,7 +208,7 @@ impl HfTime {
 
     /// return the irl time since the beginning.config
     #[must_use]
-    pub const fn as_millis(&self) -> i64 {
+    const fn as_millis(&self) -> i64 {
         self.time
     }
 
@@ -198,6 +216,12 @@ impl HfTime {
     #[must_use]
     pub const fn as_datetime(&self) -> Option<DateTime<Utc>> {
         DateTime::from_timestamp_millis(self.time + self.config.start_time)
+    }
+
+    /// return the time passed when the game is up since the beginning.config
+    #[must_use]
+    pub const fn as_duration(&self) -> Duration {
+        Duration::milliseconds(self.as_millis())
     }
 
     /// return the time passed when the game is up since the beginning.config
@@ -222,6 +246,17 @@ impl HfTime {
         (
             HfStatus::Running,
             Duration::milliseconds(self.config.ig_length - rest),
+        )
+    }
+
+    /// return duration and hfDuration before date
+    #[must_use]
+    pub fn remaining(&self, until: DateTime<Utc>) -> (Duration, HfDuration) {
+        let end = Self::new(until, self.config);
+
+        (
+            end.as_duration() - self.as_duration(),
+            end.as_hf_duration() - self.as_hf_duration(),
         )
     }
 
