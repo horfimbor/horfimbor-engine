@@ -3,10 +3,11 @@ name = "horfimbor-callback-recall"
 version = "0.1.0"
 edition = "2024"
 description = "a small lib allowing to store callback that will be triggered at a specified date"
-repository = "https://github.com/horfimbor/horfimbor-callback-recall"
+repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"
-keywords = ["event", "callback"]
-categories = ["Database interfaces"]
+readme = "README.md"
+keywords = ["callback", "scheduler", "timer", "async", "sqlite"]
+categories = ["database", "asynchronous"]
 
 [dependencies]
 futures = "0.3"
