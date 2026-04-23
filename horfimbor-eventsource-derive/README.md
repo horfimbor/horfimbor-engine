@@ -6,6 +6,8 @@ Procedural derive macros for [`horfimbor-eventsource`](https://crates.io/crates/
 
 You do not need to add this crate directly — it is re-exported from `horfimbor-eventsource`.
 
+More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/) and [horfimbor-template](https://github.com/horfimbor/horfimbor-template).
+
 ## Macros
 
 ### `#[derive(Command)]`

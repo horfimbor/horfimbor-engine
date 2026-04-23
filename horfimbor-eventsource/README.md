@@ -4,6 +4,8 @@
 
 Core event-sourcing library for the Horfimbor engine, built on top of [`KurrentDB`](https://www.kurrent.io/) with optional Redis caching.
 
+More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/) and [horfimbor-template](https://github.com/horfimbor/horfimbor-template).
+
 ## Features
 
 - `cache-redis` *(default)* — Redis-backed state cache via `StateDb<S>`

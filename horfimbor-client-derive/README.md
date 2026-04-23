@@ -6,6 +6,8 @@ Procedural macro for [`horfimbor-client`](https://crates.io/crates/horfimbor-cli
 
 Generates a [Web Component](https://developer.mozilla.org/en-US/docs/Web/Web_Components) wrapper around a Yew component, so it can be used as a standard HTML custom element (`<my-widget />`). The wrapper handles attribute observation, prop propagation, and lifecycle management.
 
+More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/) and [horfimbor-template](https://github.com/horfimbor/horfimbor-template).
+
 ## Usage
 
 ```toml

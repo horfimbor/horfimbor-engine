@@ -9,7 +9,7 @@ Provides:
 - A typed `send_command` helper for posting commands over HTTP.
 - A `LoadExternalComponent` component for dynamically importing a remote WASM module.
 
-More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/).
+More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/) and [horfimbor-template](https://github.com/horfimbor/horfimbor-template).
 
 ## Setup
 

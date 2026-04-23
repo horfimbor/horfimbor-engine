@@ -4,6 +4,8 @@
 
 Shared JWT authentication for the Horfimbor ecosystem. Ensures all services produce and consume tokens in the same format, with separate integration paths for server-side Rust services and WASM browser clients.
 
+More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/), [horfimbor-template](https://github.com/horfimbor/horfimbor-template) and [hfb-auth](https://github.com/horfimbor/hfb-auth/).
+
 ## Features
 
 Choose exactly one feature:

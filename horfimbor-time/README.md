@@ -4,6 +4,8 @@
 
 Game-time calculator for Horfimbor. Converts between real-world UTC timestamps and compressed in-game time, where the game only runs during a fixed window of each real-time cycle.
 
+More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/) and [horfimbor-template](https://github.com/horfimbor/horfimbor-template).
+
 ## Concept
 
 Real time is divided into repeating cycles of `irl_length` milliseconds. Within each cycle, only the first `ig_length` milliseconds count as active in-game time. During the remainder of the cycle, the game is paused and no in-game time passes.
