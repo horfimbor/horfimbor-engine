@@ -3,9 +3,10 @@ name = "horfimbor-client-derive"
 version = "0.1.2"
 edition = "2024"
 description = "derive macro for yew and custom-elements"
-repository = "https://github.com/horfimbor/horfimbor-client-derive"
+repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"
-keywords = ["macro"]
+readme = "README.md"
+keywords = ["macro", "derive", "yew", "webcomponent"]
 categories = ["development-tools::procedural-macro-helpers"]
 
 [dependencies]

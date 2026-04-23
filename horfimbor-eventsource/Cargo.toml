@@ -5,8 +5,9 @@ edition = "2024"
 description = "an eventsource implementation on top of kurrentdb"
 repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"
-keywords = ["eventsource", "eventsourcing", "kurrentdb"]
-categories = ["database", "rust-patterns"]
+readme = "README.md"
+keywords = ["eventsource", "eventsourcing", "kurrentdb", "event-sourcing", "cqrs"]
+categories = ["database", "rust-patterns", "asynchronous"]
 
 [dependencies]
 async-trait = "0.1"

@@ -3,9 +3,10 @@ name = "horfimbor-jwt"
 version = "0.3.0"
 edition = "2024"
 description = "Jwt handler for the game engine Horfimbor"
-repository = "https://github.com/horfimbor/horfimbor-jwt"
+repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"
-keywords = ["jwt"]
+readme = "README.md"
+keywords = ["jwt", "authentication", "token", "rocket"]
 categories = ["authentication"]
 
 [dependencies]
