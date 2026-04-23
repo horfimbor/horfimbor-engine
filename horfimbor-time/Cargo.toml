@@ -3,10 +3,11 @@ name = "horfimbor-time"
 version = "0.3.0"
 edition = "2024"
 description = "Time calculator for the Horfimbor game"
-repository = "https://github.com/horfimbor/horfimbor-time"
+repository = "https://github.com/horfimbor/horfimbor-engine"
 license-file = "LICENSE"
-keywords = ["gamedev", "time"]
-categories = ["game-development"]
+readme = "README.md"
+keywords = ["gamedev", "time", "game", "chrono"]
+categories = ["game-development", "date-and-time"]
 
 [dependencies]
 thiserror = { workspace = true }
