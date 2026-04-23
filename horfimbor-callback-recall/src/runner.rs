@@ -18,11 +18,9 @@ pub async fn run<P: Pool>(inner: Inner<P>, duration: Duration) {
                 }
             }
             Err(e) => {
-                println!("{e:?}");
+                eprintln!("callback-recall: failed to fetch due callbacks: {e}");
             }
         }
-
-        println!("foobar !");
     }
 }
 
@@ -36,10 +34,11 @@ async fn run_one<P: Pool>(pool: P, handlers: HashMap<String, HandlerFn>, row: Ca
     }
 
     let Some(handler) = handlers.get(&row.identifier) else {
-        let res = pool.mark_failed(row.id, "no handler registered").await;
-        if res.is_err() {
-            dbg!(&res);
-            todo!("handle error")
+        if let Err(e) = pool.mark_failed(row.id, "no handler registered").await {
+            eprintln!(
+                "callback-recall: failed to mark callback {} as failed: {e}",
+                row.id
+            );
         }
         return;
     };
@@ -48,26 +47,29 @@ async fn run_one<P: Pool>(pool: P, handlers: HashMap<String, HandlerFn>, row: Ca
 
     match res {
         Ok(Ok(())) => {
-            let res = pool.mark_fired(row.id).await;
-            if res.is_err() {
-                dbg!(&res);
-                todo!("handle error")
+            if let Err(e) = pool.mark_fired(row.id).await {
+                eprintln!(
+                    "callback-recall: failed to mark callback {} as fired: {e}",
+                    row.id
+                );
             }
         }
         Ok(Err(err)) => {
             let err = format!("event failed : {err}");
-            let res = pool.mark_failed(row.id, &err).await;
-            if res.is_err() {
-                dbg!(&res);
-                todo!("handle error")
+            if let Err(e) = pool.mark_failed(row.id, &err).await {
+                eprintln!(
+                    "callback-recall: failed to mark callback {} as failed: {e}",
+                    row.id
+                );
             }
         }
         Err(err) => {
             let err = format!("fire failed : {err}");
-            let res = pool.mark_failed(row.id, &err).await;
-            if res.is_err() {
-                dbg!(&res);
-                todo!("handle error")
+            if let Err(e) = pool.mark_failed(row.id, &err).await {
+                eprintln!(
+                    "callback-recall: failed to mark callback {} as failed: {e}",
+                    row.id
+                );
             }
         }
     }
