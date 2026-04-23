@@ -12,10 +12,11 @@ You do not need to add this crate directly — it is re-exported from `horfimbor
 
 Implements `Command` for an enum. Requires the `#[state(CONST)]` attribute pointing to a `&'static str` constant.
 
-```rust
+```rust,ignore
+// ignored: proc-macro crates cannot use their own macros in doctests
 const PLAYER: &str = "player";
 
-#[derive(Debug, Clone, Serialize, Deserialize, Command)]
+#[derive(Debug, Clone, Command)]
 #[state(PLAYER)]
 pub enum PlayerCommand {
     Join { name: String },
@@ -32,14 +33,15 @@ Generated `command_name()` values:
 | `Leave` | `"player.CMD.Leave"` |
 | `SendMessage(..)` | `"player.CMD.SendMessage"` |
 
-The variant name is kept in PascalCase exactly as written.
+The variant name is kept in `PascalCase` exactly as written.
 
 ### `#[derive(Event)]`
 
 Implements `Event` for an enum. The variant name is converted to `snake_case`.
 
-```rust
-#[derive(Debug, Clone, Serialize, Deserialize, Event)]
+```rust,ignore
+// ignored: proc-macro crates cannot use their own macros in doctests
+#[derive(Debug, Clone, Event)]
 #[state(PLAYER)]
 pub enum PlayerEvent {
     Joined { name: String },
@@ -60,8 +62,9 @@ Generated `event_name()` values:
 
 When a single event enum wraps multiple sub-event enums (e.g. to unify public and private events), use `#[composite_state]` instead of `#[state(...)]`. The `event_name()` call is delegated to the inner wrapped event.
 
-```rust
-#[derive(Debug, Clone, Serialize, Deserialize, Event)]
+```rust,ignore
+// ignored: proc-macro crates cannot use their own macros in doctests
+#[derive(Debug, Clone, Event)]
 #[composite_state]
 pub enum AllPlayerEvents {
     Player(PlayerEvent),
@@ -75,8 +78,9 @@ Each inner variant must be a single-field tuple variant wrapping a type that alr
 
 Implements `StateNamed` for a struct, returning the constant referenced by `#[state(CONST)]`.
 
-```rust
-#[derive(Debug, Default, Serialize, Deserialize, StateNamed)]
+```rust,ignore
+// ignored: proc-macro crates cannot use their own macros in doctests
+#[derive(Debug, Default, StateNamed)]
 #[state(PLAYER)]
 pub struct PlayerState {
     pub name: String,
@@ -90,9 +94,9 @@ This is required for `State` and `Dto` implementations to work with the reposito
 
 All names are built at **compile time** as `&'static str` values:
 
-```
+```text
 Commands : "<STATE_CONST>.CMD.<VariantName>"   (PascalCase preserved)
 Events   : "<STATE_CONST>.evt.<variant_name>"  (converted to snake_case)
 ```
 
-These strings are stored in KurrentDB. Renaming a variant or changing the `STATE_CONST` is a **breaking change** — existing events in the database will no longer be recognized.
+These strings are stored in `KurrentDB`. Renaming a variant or changing the `STATE_CONST` is a **breaking change** — existing events in the database will no longer be recognized.
