@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-time-v0.3.0...horfimbor-time-v0.4.0) - 2026-04-23
+
+### Other
+
+- Add callback recall ([#72](https://github.com/horfimbor/horfimbor-engine/pull/72))
+- Setup readme ([#73](https://github.com/horfimbor/horfimbor-engine/pull/73))
+
 ## [0.3.0](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-time-v0.2.3...horfimbor-time-v0.3.0) - 2026-04-16
 
 ### Other
