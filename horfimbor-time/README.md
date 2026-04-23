@@ -91,8 +91,8 @@ Represents a point in real time, associated with a configuration.
 let t = HfTime::now(config.clone());       // current time
 let t = HfTime::new(Utc::now(), config);   // from a DateTime<Utc>
 
-let _millis: i64 = t.as_millis();
 let _datetime = t.as_datetime();
+let _duration: Duration = t.as_duration();
 let _hf_duration: HfDuration = t.as_hf_duration();
 ```
 

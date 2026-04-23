@@ -1,0 +1,25 @@
+[package]
+name = "horfimbor-callback-recall"
+version = "0.1.0"
+edition = "2024"
+description = "a small lib allowing to store callback that will be triggered at a specified date"
+repository = "https://github.com/horfimbor/horfimbor-engine"
+license-file = "LICENSE"
+readme = "README.md"
+keywords = ["callback", "scheduler", "timer", "async", "sqlite"]
+categories = ["database", "asynchronous"]
+
+[dependencies]
+futures = "0.3"
+tokio = { version = "1", features = ["time", "rt"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "chrono", "sqlite"], optional = true }
+thiserror = "2"
+async-trait = "0.1"
+chrono = "0.4"
+
+[features]
+default = ["sqlx_sqlite"]
+sqlx_sqlite = ["sqlx"]
+
+[lints]
+workspace = true

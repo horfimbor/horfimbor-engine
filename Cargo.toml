@@ -7,7 +7,7 @@ members = [
     "horfimbor-eventsource",
     "horfimbor-eventsource-derive",
     "horfimbor-time"
-]
+, "horfimbor-callback-recall"]
 
 [workspace.dependencies]
 thiserror = "2.0"

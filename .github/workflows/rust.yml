@@ -27,7 +27,7 @@ jobs:
   build-other:
     strategy:
       matrix:
-        library: [horfimbor-client, horfimbor-client-derive, horfimbor-jwt, horfimbor-eventsource-derive]
+        library: [ horfimbor-callback-recall, horfimbor-client, horfimbor-client-derive, horfimbor-eventsource-derive, horfimbor-jwt, horfimbor-time ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

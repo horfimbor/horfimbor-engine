@@ -2,18 +2,22 @@
 
 # Horfimbor Engine
 
-A Rust workspace implementing event sourcing on top of [KurrentDB](https://www.kurrent.io/) (formerly EventStoreDB), with WASM browser client support, JWT authentication, and game-time utilities.
+A Rust workspace implementing event sourcing on top of [KurrentDB](https://www.kurrent.io/) (formerly EventStoreDB),
+with WASM browser client support, JWT authentication, and game-time utilities.
+
+More complete examples are available in [poc-monorepo](https://github.com/horfimbor/poc-monorepo/), [horfimbor-template](https://github.com/horfimbor/horfimbor-template) and [hfb-auth](https://github.com/horfimbor/hfb-auth/).
 
 ## Workspace Crates
 
-| Crate | Version | Description |
-|---|---|---|
-| [`horfimbor-eventsource`](./horfimbor-eventsource) | v0.4.0 | Core event-sourcing engine (server-side) |
-| [`horfimbor-eventsource-derive`](./horfimbor-eventsource-derive) | v0.1.9 | Derive macros for eventsource traits |
-| [`horfimbor-jwt`](./horfimbor-jwt) | v0.3.0 | Shared JWT authentication |
-| [`horfimbor-client`](./horfimbor-client) | v0.1.0 | WASM/Yew browser client via SSE |
-| [`horfimbor-client-derive`](./horfimbor-client-derive) | v0.1.2 | Derive macro for Web Components |
-| [`horfimbor-time`](./horfimbor-time) | v0.3.0 | Game-time / real-time converter |
+| Crate                                                            | Description                              |
+|------------------------------------------------------------------|------------------------------------------|
+| [`horfimbor-callback-recall`](./horfimbor-eventsource)           | Persistent scheduled callback library    |
+| [`horfimbor-eventsource`](./horfimbor-eventsource)               | Core event-sourcing engine (server-side) |
+| [`horfimbor-eventsource-derive`](./horfimbor-eventsource-derive) | Derive macros for eventsource traits     |
+| [`horfimbor-jwt`](./horfimbor-jwt)                               | Shared JWT authentication                |
+| [`horfimbor-client`](./horfimbor-client)                         | WASM/Yew browser client via SSE          |
+| [`horfimbor-client-derive`](./horfimbor-client-derive)           | Derive macro for Web Components          |
+| [`horfimbor-time`](./horfimbor-time)                             | Game-time / real-time converter          |
 
 ## Architecture
 
@@ -29,6 +33,7 @@ A Rust workspace implementing event sourcing on top of [KurrentDB](https://www.k
 │  horfimbor-eventsource + derive             │
 │  horfimbor-jwt [server feature]             │
 │  horfimbor-time (optional)                  │
+|  horfimbor-callback-recall (optional)       |
 └──────────┬──────────────────────────────────┘
            │
     ┌──────▼──────┐    ┌──────────┐
@@ -52,7 +57,8 @@ A Rust workspace implementing event sourcing on top of [KurrentDB](https://www.k
 
 ### Real-Time Push
 
-`helper::get_subscription` opens a volatile subscription to a KurrentDB stream, suitable for feeding a WebSocket or SSE endpoint to browser clients.
+`helper::get_subscription` opens a volatile subscription to a KurrentDB stream, suitable for feeding a WebSocket or SSE
+endpoint to browser clients.
 
 ## Infrastructure
 
@@ -74,5 +80,6 @@ just doc horfimbor-eventsource
 Please follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
 Workspace-level lints enforce:
+
 - `unsafe_code = "forbid"`
 - `clippy::unwrap_used = "warn"`
