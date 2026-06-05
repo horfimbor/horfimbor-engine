@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-callback-recall-v0.1.0...horfimbor-callback-recall-v0.1.1) - 2026-05-14
+
+### Other
+
+- release ([#71](https://github.com/horfimbor/horfimbor-engine/pull/71))
+
 ## [0.1.0](https://github.com/horfimbor/horfimbor-engine/releases/tag/horfimbor-callback-recall-v0.1.0) - 2026-04-23
 
 ### Other

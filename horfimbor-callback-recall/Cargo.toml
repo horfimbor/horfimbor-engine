@@ -1,6 +1,6 @@
 [package]
 name = "horfimbor-callback-recall"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "a small lib allowing to store callback that will be triggered at a specified date"
 repository = "https://github.com/horfimbor/horfimbor-engine"
