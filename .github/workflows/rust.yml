@@ -10,7 +10,7 @@ jobs:
   build-eventsource:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up cluster with Docker Compose
         run: docker compose up -d
@@ -30,7 +30,7 @@ jobs:
         library: [ horfimbor-callback-recall, horfimbor-client, horfimbor-client-derive, horfimbor-eventsource-derive, horfimbor-jwt, horfimbor-time ]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Run tests
         run: cargo test -p ${{ matrix.library }}
