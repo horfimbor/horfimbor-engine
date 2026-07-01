@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-jwt-v0.3.1...horfimbor-jwt-v0.3.2) - 2026-07-01
+
+### Other
+
+- updated the following local packages: horfimbor-client, horfimbor-eventsource
+
 ## [0.3.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-jwt-v0.3.0...horfimbor-jwt-v0.3.1) - 2026-04-23
 
 ### Other
