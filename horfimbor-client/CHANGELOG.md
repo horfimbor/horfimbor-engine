@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-client-v0.1.1...horfimbor-client-v0.1.2) - 2026-07-01
+
+### Fixed
+
+- fix cache colision ([#76](https://github.com/horfimbor/horfimbor-engine/pull/76))
+
 ## [0.1.1](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-client-v0.1.0...horfimbor-client-v0.1.1) - 2026-04-23
 
 ### Other
