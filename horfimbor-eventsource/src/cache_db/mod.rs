@@ -21,22 +21,23 @@ where
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, DbError>;
+    fn get_from_db(&self, prefix: Option<&str>, key: &ModelKey) -> Result<Option<String>, DbError>;
 
     /// internal function to write in the db
     ///
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), DbError>;
+    fn set_in_db(&self, prefix: Option<&str>, key: &ModelKey, state: String)
+    -> Result<(), DbError>;
 
     /// public function to read the db
     ///
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
-    fn get(&self, key: &ModelKey) -> Result<ModelWithPosition<S>, DbError> {
-        let data = self.get_from_db(key);
+    fn get(&self, prefix: Option<&str>, key: &ModelKey) -> Result<ModelWithPosition<S>, DbError> {
+        let data = self.get_from_db(prefix, key);
 
         match data {
             Ok(None) => Ok(ModelWithPosition::default()),
@@ -52,9 +53,14 @@ where
     /// # Errors
     ///
     /// Will return `Err` if any error append when calling the DB.
-    fn set(&self, key: &ModelKey, data: ModelWithPosition<S>) -> Result<(), DbError> {
+    fn set(
+        &self,
+        key: &ModelKey,
+        data: ModelWithPosition<S>,
+        prefix: Option<&str>,
+    ) -> Result<(), DbError> {
         let s = serde_json::to_string(&data).map_err(DbError::SerdeJson)?;
-        self.set_in_db(key, s)
+        self.set_in_db(prefix, key, s)
     }
 }
 
@@ -99,11 +105,20 @@ impl<S> CacheDb<S> for NoCache<S>
 where
     S: Dto,
 {
-    fn get_from_db(&self, _key: &ModelKey) -> Result<Option<String>, DbError> {
+    fn get_from_db(
+        &self,
+        _prefix: Option<&str>,
+        _key: &ModelKey,
+    ) -> Result<Option<String>, DbError> {
         Ok(None)
     }
 
-    fn set_in_db(&self, _key: &ModelKey, _state: String) -> Result<(), DbError> {
+    fn set_in_db(
+        &self,
+        _prefix: Option<&str>,
+        _key: &ModelKey,
+        _state: String,
+    ) -> Result<(), DbError> {
         Ok(())
     }
 }

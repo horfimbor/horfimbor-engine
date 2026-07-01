@@ -132,7 +132,7 @@ Use `StateRepository` (read + write) or `DtoRepository` (read-only) to interact 
 # pub enum CounterError { #[error("e")] E }
 # impl Dto for Counter { type Event = CounterEvent; fn play_event(&mut self, _: &CounterEvent) {} }
 # impl State for Counter { type Command = CounterCommand; type Error = CounterError; fn try_command(&self, _: CounterCommand) -> Result<Vec<CounterEvent>, CounterError> { Ok(vec![]) } }
-use horfimbor_eventsource::repository::{StateRepository, Repository};
+use horfimbor_eventsource::repository::{StateRepository, Repository, StateRepositoryConstructor};
 use horfimbor_eventsource::cache_db::NoCache;
 use horfimbor_eventsource::model_key::ModelKey;
 use kurrentdb::Client;
@@ -174,7 +174,7 @@ With Redis caching:
 # impl Dto for Counter { type Event = CounterEvent; fn play_event(&mut self, _: &CounterEvent) {} }
 # impl State for Counter { type Command = CounterCommand; type Error = CounterError; fn try_command(&self, _: CounterCommand) -> Result<Vec<CounterEvent>, CounterError> { Ok(vec![]) } }
 use horfimbor_eventsource::cache_db::redis::StateDb;
-use horfimbor_eventsource::repository::{StateRepository, Repository};
+use horfimbor_eventsource::repository::{StateRepository, Repository, StateRepositoryConstructor};
 use kurrentdb::Client;
 
 async fn example(db: Client) -> Result<(), Box<dyn std::error::Error>> {
@@ -247,7 +247,7 @@ Run a background task to keep Redis in sync with `KurrentDB` via a persistent su
 # pub enum CounterError { #[error("e")] E }
 # impl Dto for Counter { type Event = CounterEvent; fn play_event(&mut self, _: &CounterEvent) {} }
 # impl State for Counter { type Command = CounterCommand; type Error = CounterError; fn try_command(&self, _: CounterCommand) -> Result<Vec<CounterEvent>, CounterError> { Ok(vec![]) } }
-use horfimbor_eventsource::repository::{StateRepository, Repository};
+use horfimbor_eventsource::repository::{StateRepository, Repository, StateRepositoryConstructor};
 use horfimbor_eventsource::cache_db::NoCache;
 use horfimbor_eventsource::Stream;
 use kurrentdb::Client;

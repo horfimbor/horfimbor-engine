@@ -5,7 +5,7 @@ use horfimbor_eventsource::Stream;
 use horfimbor_eventsource::cache_db::NoCache;
 use horfimbor_eventsource::helper::get_persistent_subscription;
 use horfimbor_eventsource::model_key::ModelKey;
-use horfimbor_eventsource::repository::{Repository, StateRepository};
+use horfimbor_eventsource::repository::{Repository, StateRepository, StateRepositoryConstructor};
 use kurrentdb::Client as EventClient;
 use std::time::Duration;
 use tokio::time::sleep;

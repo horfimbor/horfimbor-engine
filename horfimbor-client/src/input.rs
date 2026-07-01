@@ -19,7 +19,7 @@ pub async fn send_command<C: Serialize + Debug + Send + Sync, P: EventStoreProps
         path = props.path(),
         id = props.id()
     ))
-    .body(serde_json::to_string(&cmd).map_err(|_| format!("cannot serialize cmd {:?}", &cmd))?)
+    .body(serde_json::to_string(&cmd).map_err(|_| format!("cannot serialize cmd {cmd:?}"))?)
     .header("Content-Type", "application/json")
     .header("Authorization", props.jwt())
     .send()

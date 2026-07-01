@@ -30,27 +30,36 @@ impl<S> CacheDb<S> for StateDb<S>
 where
     S: Dto,
 {
-    fn get_from_db(&self, key: &ModelKey) -> Result<Option<String>, DbError> {
+    fn get_from_db(&self, prefix: Option<&str>, key: &ModelKey) -> Result<Option<String>, DbError> {
         let mut connection = self
             .client
             .get_connection()
             .map_err(|e| DbError::Disconnect(e.to_string()))?;
 
+        let key = prefix.map_or_else(|| key.format(), |prefix| format!("{prefix}-{key}"));
+
         let data: Option<String> = connection
-            .get(key.format())
+            .get(key)
             .map_err(|e| DbError::Internal(e.to_string()))?;
 
         Ok(data)
     }
 
-    fn set_in_db(&self, key: &ModelKey, state: String) -> Result<(), DbError> {
+    fn set_in_db(
+        &self,
+        prefix: Option<&str>,
+        key: &ModelKey,
+        state: String,
+    ) -> Result<(), DbError> {
         let mut connection = self
             .client
             .get_connection()
             .map_err(|e| DbError::Disconnect(e.to_string()))?;
 
+        let key = prefix.map_or_else(|| key.format(), |prefix| format!("{prefix}-{key}"));
+
         connection
-            .set::<_, _, ()>(key.format(), state)
+            .set::<_, _, ()>(key, state)
             .map_err(|err| DbError::Internal(err.to_string()))?;
 
         Ok(())
