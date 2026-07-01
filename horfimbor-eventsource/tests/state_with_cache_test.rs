@@ -15,6 +15,7 @@ use horfimbor_eventsource::cache_db::redis::StateDb;
 use horfimbor_eventsource::model_key::ModelKey;
 use horfimbor_eventsource::repository::Repository;
 use horfimbor_eventsource::repository::StateRepository;
+use horfimbor_eventsource::repository::StateRepositoryConstructor;
 
 use crate::state_db::{PokeCommand, PokeState};
 

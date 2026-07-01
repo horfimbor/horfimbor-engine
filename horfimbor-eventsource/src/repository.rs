@@ -32,6 +32,7 @@ where
 {
     event_db: EventDb,
     cache_db: C,
+    repository_kind: RepositoryKind,
     dto: PhantomData<D>,
 }
 
@@ -47,6 +48,7 @@ where
 {
     event_db: EventDb,
     state_db: C,
+    repository_kind: RepositoryKind,
     state: PhantomData<S>,
 }
 
@@ -80,6 +82,54 @@ where
     }
 }
 
+/// the enum `RepositoryKind` allow to differentiate the state and dto caches
+/// and also to have multiple dto listening to the same events
+#[derive(Clone)]
+pub enum RepositoryKind {
+    /// this repository kind have a cache that is not prefixes
+    State,
+    /// this is most likely be the name of the dto
+    Dto(&'static str),
+}
+
+impl RepositoryKind {
+    const fn to_cache_prefix(&self) -> Option<&'static str> {
+        match self {
+            Self::State => None,
+            Self::Dto(p) => Some(p),
+        }
+    }
+}
+
+#[allow(missing_docs)]
+#[async_trait]
+/// the trait `Repository` allow to reconstruct the `Dto` from the `EventDb`
+pub trait DtoRepositoryConstructor<D, C>: Clone + Send
+where
+    D: Dto,
+    C: CacheDb<D>,
+{
+    /// A repository need the `EventDb`, a cache system and a kind,
+    /// the cache system can be the `NoCache` provided in `cache_db`,
+    /// the kind is used only to avoid cache collision,
+    /// the type system take care of everything else.
+    fn new(event_db: EventDb, cache_db: C, repository_kind: RepositoryKind) -> Self;
+}
+
+#[allow(missing_docs)]
+#[async_trait]
+/// the trait `Repository` allow to reconstruct the `Dto` from the `EventDb`
+pub trait StateRepositoryConstructor<D, C>: Clone + Send
+where
+    D: Dto,
+    C: CacheDb<D>,
+{
+    /// A repository need the `EventDb`, a cache system and a kind,
+    /// the cache system can be the `NoCache` provided in `cache_db`,
+    /// the type system take care of everything else.
+    fn new(event_db: EventDb, cache_db: C) -> Self;
+}
+
 #[allow(missing_docs)]
 #[async_trait]
 /// the trait `Repository` allow to reconstruct the `Dto` from the `EventDb`
@@ -88,15 +138,14 @@ where
     D: Dto,
     C: CacheDb<D>,
 {
-    /// A repository only need the `EventDb` and a cache,
-    /// the type system take care of everything else.
-    fn new(event_db: EventDb, cache_db: C) -> Self;
-
     /// Getter for the `EventDb`
     fn event_db(&self) -> &EventDb;
 
     /// Getter for the cache
     fn cache_db(&self) -> &C;
+
+    /// Getter for the cache
+    fn repository_kind(&self) -> &RepositoryKind;
 
     async fn get_model(&self, key: &ModelKey) -> Result<ModelWithPosition<D>, EventSourceError>
     where
@@ -104,7 +153,7 @@ where
     {
         let value = self
             .cache_db()
-            .get(key)
+            .get(self.repository_kind().to_cache_prefix(), key)
             .map_err(EventSourceError::CacheDbError)?;
 
         self.complete_from_es(key, &value).await
@@ -184,7 +233,7 @@ where
 
             let mut model = self
                 .cache_db()
-                .get(&model_key)
+                .get(self.repository_kind().to_cache_prefix(), &model_key)
                 .map_err(EventSourceError::CacheDbError)?;
 
             let ordering = if event.revision == 0 {
@@ -204,7 +253,7 @@ where
                     model = self.complete_from_es(&model_key, &model).await?;
 
                     self.cache_db()
-                        .set(&model_key, model)
+                        .set(&model_key, model, self.repository_kind().to_cache_prefix())
                         .map_err(EventSourceError::CacheDbError)?;
                 }
                 Ordering::Equal | Ordering::Greater => {}
@@ -232,27 +281,39 @@ where
     }
 }
 
+impl<D, C> DtoRepositoryConstructor<D, C> for DtoRepository<D, C>
+where
+    D: Dto,
+    C: CacheDb<D>,
+{
+    fn new(event_db: EventDb, cache_db: C, repository_kind: RepositoryKind) -> Self {
+        Self {
+            event_db,
+            cache_db,
+            repository_kind,
+            dto: PhantomData,
+        }
+    }
+}
+
 impl<D, C> Repository<D, C> for DtoRepository<D, C>
 where
     D: Dto,
     C: CacheDb<D>,
 {
-    fn new(event_db: EventDb, cache_db: C) -> Self {
-        Self {
-            event_db,
-            cache_db,
-            dto: PhantomData,
-        }
-    }
     fn event_db(&self) -> &EventDb {
         &self.event_db
     }
     fn cache_db(&self) -> &C {
         &self.cache_db
     }
+
+    fn repository_kind(&self) -> &RepositoryKind {
+        &self.repository_kind
+    }
 }
 
-impl<S, C> Repository<S, C> for StateRepository<S, C>
+impl<S, C> StateRepositoryConstructor<S, C> for StateRepository<S, C>
 where
     S: State,
     C: CacheDb<S>,
@@ -261,15 +322,26 @@ where
         Self {
             event_db,
             state_db,
+            repository_kind: RepositoryKind::State,
             state: PhantomData,
         }
     }
+}
 
+impl<S, C> Repository<S, C> for StateRepository<S, C>
+where
+    S: State,
+    C: CacheDb<S>,
+{
     fn event_db(&self) -> &EventDb {
         &self.event_db
     }
     fn cache_db(&self) -> &C {
         &self.state_db
+    }
+
+    fn repository_kind(&self) -> &RepositoryKind {
+        &self.repository_kind
     }
 }
 

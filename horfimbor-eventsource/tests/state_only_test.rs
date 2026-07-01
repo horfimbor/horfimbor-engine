@@ -8,8 +8,10 @@ use uuid::Uuid;
 
 use horfimbor_eventsource::cache_db::NoCache;
 use horfimbor_eventsource::model_key::ModelKey;
-use horfimbor_eventsource::repository::Repository;
-use horfimbor_eventsource::repository::{DtoRepository, StateRepository};
+use horfimbor_eventsource::repository::{
+    DtoRepository, DtoRepositoryConstructor, StateRepository, StateRepositoryConstructor,
+};
+use horfimbor_eventsource::repository::{Repository, RepositoryKind};
 
 use crate::concurrent::{ConcurrentCommand, ConcurrentState};
 use crate::simple::{SimpleCommand, SimpleNbAddDto, SimpleState};
@@ -25,7 +27,11 @@ type EasyNoCacheDto = NoCache<SimpleNbAddDto>;
 async fn easy_case() {
     let repo_state = StateRepository::new(get_event_db(), EasyNoCacheState::new());
 
-    let repo_dto = DtoRepository::new(get_event_db(), EasyNoCacheDto::new());
+    let repo_dto = DtoRepository::new(
+        get_event_db(),
+        EasyNoCacheDto::new(),
+        RepositoryKind::Dto("easy_cache"),
+    );
 
     let key = ModelKey::new("simple_test", Uuid::new_v4());
 
