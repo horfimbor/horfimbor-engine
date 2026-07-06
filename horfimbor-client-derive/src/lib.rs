@@ -107,7 +107,7 @@ pub fn derive_web_component(input: TokenStream) -> TokenStream {
             use std::mem::take;
 
 
-            #[derive(Default, Properties, PartialEq)]
+            #[derive(Default, Properties, PartialEq, Eq)]
             pub struct #name {
                 #opt_struct
             }
