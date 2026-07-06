@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-client-derive-v0.1.3...horfimbor-client-derive-v0.1.4) - 2026-07-06
+
+### Fixed
+
+- fix missing eq macro for clippy check ([#78](https://github.com/horfimbor/horfimbor-engine/pull/78))
+
 ## [0.1.3](https://github.com/horfimbor/horfimbor-engine/compare/horfimbor-client-derive-v0.1.2...horfimbor-client-derive-v0.1.3) - 2026-04-23
 
 ### Other
